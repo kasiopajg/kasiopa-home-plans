@@ -1,0 +1,1035 @@
+{
+ "format": "kasiopa-home-plans",
+ "version": 2,
+ "meta": {
+  "id": "example-house",
+  "rev": 1,
+  "title": "Example house",
+  "level": "Ground floor",
+  "standard": "IEC",
+  "lang": "en"
+ },
+ "elements": [
+  {
+   "id": 1,
+   "type": "garden",
+   "rot": 0,
+   "label": "Plot",
+   "circuit": "",
+   "x": -50,
+   "y": -100,
+   "w": 1225,
+   "h": 825
+  },
+  {
+   "id": 2,
+   "type": "terrace",
+   "rot": 0,
+   "label": "South terrace",
+   "circuit": "",
+   "x": 300,
+   "y": 425,
+   "w": 400,
+   "h": 150
+  },
+  {
+   "id": 3,
+   "type": "path",
+   "rot": 0,
+   "label": "Driveway",
+   "circuit": "",
+   "x": 1000,
+   "y": 225,
+   "w": 100,
+   "h": 500
+  },
+  {
+   "id": 4,
+   "type": "pool",
+   "rot": 0,
+   "label": "Pool",
+   "circuit": "",
+   "x": 50,
+   "y": 525,
+   "w": 225,
+   "h": 125
+  },
+  {
+   "id": 5,
+   "type": "techroom",
+   "rot": 0,
+   "label": "Plant room",
+   "circuit": "",
+   "x": 300,
+   "y": 600,
+   "w": 100,
+   "h": 100
+  },
+  {
+   "id": 6,
+   "type": "solar",
+   "rot": 0,
+   "label": "PV array (roof)",
+   "circuit": "",
+   "x": 525,
+   "y": -75,
+   "w": 225,
+   "h": 62.5,
+   "notes": "6 panels, 2.4 kWp, on the roof above bedroom 1"
+  },
+  {
+   "id": 7,
+   "type": "room",
+   "rot": 0,
+   "label": "Living / kitchen",
+   "circuit": "",
+   "x": 0,
+   "y": 0,
+   "w": 500,
+   "h": 425
+  },
+  {
+   "id": 8,
+   "type": "room",
+   "rot": 0,
+   "label": "Bedroom 1",
+   "circuit": "",
+   "x": 500,
+   "y": 0,
+   "w": 250,
+   "h": 225
+  },
+  {
+   "id": 9,
+   "type": "room",
+   "rot": 0,
+   "label": "Bedroom 2",
+   "circuit": "",
+   "x": 750,
+   "y": 0,
+   "w": 250,
+   "h": 225
+  },
+  {
+   "id": 10,
+   "type": "room",
+   "rot": 0,
+   "label": "Bathroom",
+   "circuit": "",
+   "x": 500,
+   "y": 225,
+   "w": 200,
+   "h": 200
+  },
+  {
+   "id": 11,
+   "type": "room",
+   "rot": 0,
+   "label": "WC",
+   "circuit": "",
+   "x": 700,
+   "y": 225,
+   "w": 120,
+   "h": 200
+  },
+  {
+   "id": 12,
+   "type": "room",
+   "rot": 0,
+   "label": "Entrance",
+   "circuit": "",
+   "x": 820,
+   "y": 225,
+   "w": 180,
+   "h": 200
+  },
+  {
+   "id": 13,
+   "type": "countertop",
+   "rot": 0,
+   "label": "Worktop",
+   "circuit": "",
+   "x": 12.5,
+   "y": 50,
+   "w": 250,
+   "h": 37.5
+  },
+  {
+   "id": 14,
+   "type": "door",
+   "rot": 0,
+   "label": "Front door",
+   "circuit": "",
+   "x": 890,
+   "y": 419,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 15,
+   "type": "door",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 560,
+   "y": 219,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 16,
+   "type": "door",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 850,
+   "y": 219,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 17,
+   "type": "door",
+   "rot": 90,
+   "label": "",
+   "circuit": "",
+   "x": 477.5,
+   "y": 314,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 18,
+   "type": "door",
+   "rot": 90,
+   "label": "",
+   "circuit": "",
+   "x": 797.5,
+   "y": 374,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 19,
+   "type": "frenchdoor2",
+   "rot": 0,
+   "label": "To terrace",
+   "circuit": "",
+   "x": 320,
+   "y": 419,
+   "w": 150,
+   "h": 12
+  },
+  {
+   "id": 20,
+   "type": "window2",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 175,
+   "y": -6,
+   "w": 120,
+   "h": 12
+  },
+  {
+   "id": 21,
+   "type": "window",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 590,
+   "y": -6,
+   "w": 75,
+   "h": 12
+  },
+  {
+   "id": 22,
+   "type": "window",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 840,
+   "y": -6,
+   "w": 75,
+   "h": 12
+  },
+  {
+   "id": 23,
+   "type": "window",
+   "rot": 90,
+   "label": "",
+   "circuit": "",
+   "x": -45,
+   "y": 194,
+   "w": 90,
+   "h": 12
+  },
+  {
+   "id": 24,
+   "type": "slidinggate",
+   "rot": 0,
+   "label": "Car gate",
+   "circuit": "",
+   "x": 962.5,
+   "y": 719,
+   "w": 175,
+   "h": 12
+  },
+  {
+   "id": 25,
+   "type": "elecmeter",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 975,
+   "y": 300,
+   "notes": "Meter box on the facade"
+  },
+  {
+   "id": 26,
+   "type": "panel",
+   "rot": 0,
+   "label": "Main panel",
+   "circuit": "",
+   "x": 915,
+   "y": 300
+  },
+  {
+   "id": 27,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 350,
+   "y": 250
+  },
+  {
+   "id": 28,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 125,
+   "y": 250
+  },
+  {
+   "id": 29,
+   "type": "switch",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 470,
+   "y": 390
+  },
+  {
+   "id": 30,
+   "type": "shelly",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 440,
+   "y": 390,
+   "notes": "Shelly 1 Mini Gen3 behind the switch, neutral available"
+  },
+  {
+   "id": 31,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 625,
+   "y": 125
+  },
+  {
+   "id": 32,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 875,
+   "y": 125
+  },
+  {
+   "id": 33,
+   "type": "twoway",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 530,
+   "y": 200
+  },
+  {
+   "id": 34,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 600,
+   "y": 350
+  },
+  {
+   "id": 35,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 50,
+   "y": 100
+  },
+  {
+   "id": 36,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 450,
+   "y": 60
+  },
+  {
+   "id": 37,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 250,
+   "y": 390
+  },
+  {
+   "id": 38,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 30,
+   "y": 300
+  },
+  {
+   "id": 39,
+   "type": "hob",
+   "rot": 0,
+   "label": "",
+   "circuit": "C4",
+   "x": 60,
+   "y": 68.75
+  },
+  {
+   "id": 40,
+   "type": "oven",
+   "rot": 0,
+   "label": "",
+   "circuit": "C5",
+   "x": 100,
+   "y": 125
+  },
+  {
+   "id": 41,
+   "type": "dishwasher",
+   "rot": 0,
+   "label": "",
+   "circuit": "C6",
+   "x": 225,
+   "y": 125
+  },
+  {
+   "id": 42,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C7",
+   "x": 550,
+   "y": 50
+  },
+  {
+   "id": 43,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C7",
+   "x": 950,
+   "y": 50
+  },
+  {
+   "id": 44,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C7",
+   "x": 720,
+   "y": 190
+  },
+  {
+   "id": 45,
+   "type": "washer",
+   "rot": 0,
+   "label": "",
+   "circuit": "C8",
+   "x": 680,
+   "y": 340
+  },
+  {
+   "id": 46,
+   "type": "ventilation",
+   "rot": 0,
+   "label": "",
+   "circuit": "C9",
+   "x": 760,
+   "y": 320
+  },
+  {
+   "id": 47,
+   "type": "doorbell",
+   "rot": 0,
+   "label": "",
+   "circuit": "C9",
+   "x": 960,
+   "y": 400
+  },
+  {
+   "id": 48,
+   "type": "outdoorlight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C10",
+   "x": 400,
+   "y": 460
+  },
+  {
+   "id": 49,
+   "type": "outdoorlight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C10",
+   "x": 1050,
+   "y": 340
+  },
+  {
+   "id": 50,
+   "type": "inverter",
+   "rot": 0,
+   "label": "",
+   "circuit": "C11",
+   "x": 975,
+   "y": 350,
+   "notes": "Hybrid inverter 3 kW"
+  },
+  {
+   "id": 51,
+   "type": "junctionbox",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 700,
+   "y": 62.5
+  },
+  {
+   "id": 52,
+   "type": "smoke",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 700,
+   "y": 125
+  },
+  {
+   "id": 53,
+   "type": "smoke",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 250,
+   "y": 300
+  },
+  {
+   "id": 54,
+   "type": "netcabinet",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 860,
+   "y": 345
+  },
+  {
+   "id": 55,
+   "type": "fiber",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1050,
+   "y": 400,
+   "notes": "Fiber from the street, conduit 40 mm"
+  },
+  {
+   "id": 56,
+   "type": "router",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 875,
+   "y": 395
+  },
+  {
+   "id": 57,
+   "type": "rj45",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 400,
+   "y": 30
+  },
+  {
+   "id": 58,
+   "type": "rj45",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 600,
+   "y": 150
+  },
+  {
+   "id": 59,
+   "type": "rj45",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 950,
+   "y": 150
+  },
+  {
+   "id": 60,
+   "type": "wifi",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 450,
+   "y": 220
+  },
+  {
+   "id": 61,
+   "type": "camera",
+   "rot": 135,
+   "label": "Gate camera",
+   "circuit": "",
+   "x": 1150,
+   "y": -50
+  },
+  {
+   "id": 62,
+   "type": "intercom",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1010,
+   "y": 700
+  },
+  {
+   "id": 63,
+   "type": "watermeter",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1050,
+   "y": 650,
+   "notes": "Street connection"
+  },
+  {
+   "id": 64,
+   "type": "manifold",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 640,
+   "y": 395
+  },
+  {
+   "id": 65,
+   "type": "waterheater",
+   "rot": 0,
+   "label": "",
+   "circuit": "C12",
+   "x": 530,
+   "y": 345
+  },
+  {
+   "id": 66,
+   "type": "shower",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 660,
+   "y": 265
+  },
+  {
+   "id": 67,
+   "type": "basin",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 560,
+   "y": 400
+  },
+  {
+   "id": 68,
+   "type": "wc",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 760,
+   "y": 395
+  },
+  {
+   "id": 69,
+   "type": "sink",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 175,
+   "y": 68.75
+  },
+  {
+   "id": 70,
+   "type": "drainpit",
+   "rot": 0,
+   "label": "IC1",
+   "circuit": "",
+   "x": 760,
+   "y": 500
+  },
+  {
+   "id": 71,
+   "type": "drainpit",
+   "rot": 0,
+   "label": "IC2 sewer",
+   "circuit": "",
+   "x": 760,
+   "y": 700
+  },
+  {
+   "id": 72,
+   "type": "drainpit",
+   "rot": 0,
+   "label": "IC3",
+   "circuit": "",
+   "x": 175,
+   "y": -50
+  },
+  {
+   "id": 73,
+   "type": "pipeCold",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     1050,
+     650
+    ],
+    [
+     1050,
+     462.5
+    ],
+    [
+     640,
+     462.5
+    ],
+    [
+     640,
+     407.5
+    ]
+   ],
+   "spec": "PEX 20"
+  },
+  {
+   "id": 74,
+   "type": "pipeHot",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     530,
+     356
+    ],
+    [
+     530,
+     375
+    ],
+    [
+     620,
+     375
+    ],
+    [
+     620,
+     395
+    ]
+   ],
+   "spec": "PEX 16"
+  },
+  {
+   "id": 75,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     660,
+     265
+    ],
+    [
+     660,
+     450
+    ],
+    [
+     760,
+     450
+    ],
+    [
+     760,
+     500
+    ]
+   ],
+   "spec": "PVC 50"
+  },
+  {
+   "id": 76,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     560,
+     400
+    ],
+    [
+     560,
+     450
+    ],
+    [
+     660,
+     450
+    ]
+   ],
+   "spec": "PVC 40"
+  },
+  {
+   "id": 77,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     760,
+     395
+    ],
+    [
+     760,
+     500
+    ]
+   ],
+   "spec": "PVC 110"
+  },
+  {
+   "id": 78,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     760,
+     500
+    ],
+    [
+     760,
+     700
+    ]
+   ],
+   "spec": "PVC 110"
+  },
+  {
+   "id": 79,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     175,
+     68.75
+    ],
+    [
+     175,
+     -50
+    ]
+   ],
+   "spec": "PVC 40"
+  },
+  {
+   "id": 80,
+   "type": "cable3G",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     915,
+     287.5
+    ],
+    [
+     915,
+     237.5
+    ],
+    [
+     712.5,
+     237.5
+    ],
+    [
+     712.5,
+     62.5
+    ],
+    [
+     700,
+     62.5
+    ]
+   ],
+   "spec": "3G1.5"
+  },
+  {
+   "id": 81,
+   "type": "poolpump",
+   "rot": 0,
+   "label": "",
+   "circuit": "C13",
+   "x": 325,
+   "y": 675
+  },
+  {
+   "id": 82,
+   "type": "skimmer",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 262.5,
+   "y": 550
+  },
+  {
+   "id": 83,
+   "type": "poolreturn",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 62.5,
+   "y": 587.5
+  },
+  {
+   "id": 84,
+   "type": "poollight",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 162.5,
+   "y": 637.5
+  },
+  {
+   "id": 85,
+   "type": "irrigctrl",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 375,
+   "y": 675
+  },
+  {
+   "id": 86,
+   "type": "sprinkler",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 500,
+   "y": 650
+  },
+  {
+   "id": 87,
+   "type": "sprinkler",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 700,
+   "y": 650
+  },
+  {
+   "id": 88,
+   "type": "sprinkler",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 900,
+   "y": 650
+  },
+  {
+   "id": 89,
+   "type": "pipeIrrig",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     375,
+     675
+    ],
+    [
+     425,
+     675
+    ],
+    [
+     425,
+     650
+    ],
+    [
+     900,
+     650
+    ]
+   ],
+   "spec": "PE 25"
+  },
+  {
+   "id": 90,
+   "type": "tree",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": -12.5,
+   "y": 700
+  },
+  {
+   "id": 91,
+   "type": "tree",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1137.5,
+   "y": 150
+  },
+  {
+   "id": 92,
+   "type": "shrub",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 850,
+   "y": 520
+  },
+  {
+   "id": 93,
+   "type": "note",
+   "rot": 0,
+   "label": "Levels: +0.00 inside, -0.15 terrace",
+   "circuit": "",
+   "x": 40,
+   "y": 470
+  }
+ ],
+ "nextId": 94
+}

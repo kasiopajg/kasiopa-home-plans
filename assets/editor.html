@@ -1,0 +1,2632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Plans Editor</title>
+<!--
+  Kasiopa Home Plans - 2D floor plan and technical networks editor
+  Single self-contained file, no dependencies, works offline.
+  MIT License - (c) Damien Moras, kasiopa.com
+  https://kasiopa.com
+-->
+<style>
+:root{
+  --ink:#1B1C1F; --paper:#FBFBFC; --accent:#2563EB; --warn:#C2410C;
+  --grey-50:#F4F5F7; --grey-100:#E9EBEE; --grey-200:#D8DBDF;
+  --grey-400:#A6ABB2; --grey-600:#6F747C; --grey-800:#3C3F45;
+  --hairline:var(--grey-100); --radius:12px;
+  --font-body:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font:400 14px/1.5 var(--font-body);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px;border-bottom:2px solid var(--ink);background:var(--paper);flex-shrink:0;flex-wrap:wrap}
+.wordmark{font:700 18px var(--font-body);letter-spacing:-0.02em}
+.wordmark .dot{color:var(--accent)}
+.meta{font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--grey-600)}
+.meta a{color:inherit}
+.toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+button{font:600 12.5px var(--font-body);padding:6px 11px;border-radius:8px;border:1px solid var(--grey-200);background:transparent;color:var(--ink);cursor:pointer}
+button:hover{background:var(--grey-50)}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.primary:hover{background:var(--grey-800)}
+button.danger{color:#B91C1C}
+button:disabled{opacity:.4;cursor:default}
+.sep{width:1px;height:22px;background:var(--grey-200);margin:0 2px}
+main{display:flex;flex:1;min-height:0}
+#sidebar{width:250px;border-right:1px solid var(--hairline);overflow-y:auto;padding:12px;flex-shrink:0;background:var(--paper)}
+.kicker{font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--grey-600);margin:14px 0 7px}
+.kicker:first-child{margin-top:0}
+.kicker .num{color:var(--accent);margin-right:4px}
+.pal{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.pal button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;font:500 10.5px var(--font-body);color:var(--grey-800);line-height:1.2;text-align:center}
+.pal button svg{width:26px;height:26px;stroke:var(--ink);fill:none;stroke-width:1.6}
+.pal button.active{border-color:var(--accent);background:#EFF4FF}
+#search{width:100%;padding:6px 9px;border:1px solid var(--grey-200);border-radius:8px;font:400 13px var(--font-body);margin-bottom:4px}
+#canvaswrap{flex:1;position:relative;background:var(--grey-50);overflow:hidden}
+#svg{width:100%;height:100%;display:block;touch-action:none}
+#toolbadge{position:absolute;top:12px;left:12px;background:var(--ink);color:#fff;font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:0.06em;padding:6px 12px;border-radius:8px;display:none}
+#zoomctl{position:absolute;bottom:14px;left:12px;display:flex;gap:6px}
+#zoomctl button{background:var(--paper);min-width:34px}
+#props{width:280px;border-left:1px solid var(--hairline);overflow-y:auto;padding:12px;flex-shrink:0;background:var(--paper)}
+#props .field{margin-bottom:9px}
+#props label{display:block;font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:0.06em;color:var(--grey-600);margin-bottom:3px}
+#props input,#props select,#props textarea{width:100%;padding:6px 9px;border:1px solid var(--grey-200);border-radius:8px;font:400 13.5px var(--font-body);background:var(--paper);color:var(--ink)}
+#props input:focus,#props textarea:focus{outline:none;border-color:var(--accent)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hint{font:400 12px var(--font-body);color:var(--grey-600);margin-top:10px;line-height:1.55}
+.hint b{color:var(--grey-800)}
+.layerrow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px;color:var(--grey-800)}
+.layerrow input{accent-color:var(--ink)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(27,28,31,0.35);z-index:20;align-items:center;justify-content:center}
+.overlay .card{background:var(--paper);border-radius:var(--radius);max-width:900px;width:94%;max-height:88vh;overflow:auto;padding:26px}
+.overlay h2{font:700 24px/1.15 var(--font-body);letter-spacing:-0.02em;margin-bottom:4px}
+.overlay h2 .dot{color:var(--accent)}
+.overlay table{width:100%;border-collapse:collapse;margin:10px 0 18px}
+.overlay th{background:var(--grey-50);font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:0.06em;color:var(--grey-600);text-align:left;padding:6px 9px}
+.overlay td{padding:6px 9px;border-top:1px solid var(--hairline);font-size:13.5px;vertical-align:top}
+.overlay td.num{text-align:right;font-family:var(--font-mono);font-size:12.5px;white-space:nowrap}
+.overlay .total td{font-weight:700}
+.overlay input[type=number]{width:90px;padding:4px 7px;border:1px solid var(--grey-200);border-radius:6px;font:400 13px var(--font-mono)}
+.warn{color:var(--warn)}
+.ok{color:#15803D}
+.chk{list-style:none;margin:8px 0 18px}
+.chk li{padding:6px 0;border-top:1px solid var(--hairline);font-size:13.5px}
+.chk li .tag{display:inline-block;font:600 10px var(--font-mono);text-transform:uppercase;padding:1px 6px;border-radius:5px;margin-right:8px}
+.chk li .tag.w{background:#FFEDD5;color:var(--warn)}
+.chk li .tag.i{background:var(--grey-100);color:var(--grey-800)}
+.dim{position:absolute;bottom:14px;right:14px;font:500 11px var(--font-mono);color:var(--grey-600);background:var(--paper);padding:5px 10px;border-radius:8px;border:1px solid var(--grey-200)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <span class="wordmark">Home Plans<span class="dot">.</span></span>
+    <span class="meta" style="margin-left:12px" id="plantitle"></span>
+    <span class="meta" style="margin-left:12px">by <a href="https://kasiopa.com" target="_blank" rel="noopener">kasiopa.com</a></span>
+  </div>
+  <div class="toolbar">
+    <button onclick="newPlan()">New</button>
+    <button id="btnAdj" class="primary" onclick="toggleAdjust()" title="When ON, moving a room carries its content and resizing keeps shared walls shared">Auto-adjust: ON</button>
+    <button id="btnUndo" onclick="undo()" title="Undo (Cmd/Ctrl+Z)">Undo</button>
+    <button id="btnRedo" onclick="redo()" title="Redo (Cmd/Ctrl+Shift+Z)">Redo</button>
+    <span class="sep"></span>
+    <button onclick="saveJSON()">Save JSON</button>
+    <button onclick="document.getElementById('filein').click()">Load JSON</button>
+    <input type="file" id="filein" accept=".json,application/json" style="display:none" onchange="loadJSON(this)">
+    <button onclick="exportSVG()">SVG</button>
+    <button onclick="exportPNG()">PNG</button>
+    <span class="sep"></span>
+    <button onclick="showSchemas()">Diagrams</button>
+    <button onclick="showListing()">List</button>
+    <button onclick="showAreas()">Areas</button>
+    <button class="primary" onclick="showSummary()">Overview</button>
+  </div>
+</header>
+<main>
+  <div id="sidebar"></div>
+  <div id="canvaswrap">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="toolbadge"></div>
+    <div id="zoomctl">
+      <button onclick="zoom(0.8)" title="Zoom in">+</button>
+      <button onclick="zoom(1.25)" title="Zoom out">-</button>
+      <button onclick="fitView()">Fit</button>
+    </div>
+    <div class="dim" id="dim"></div>
+  </div>
+  <div id="props"></div>
+</main>
+<div id="summary" class="overlay" onclick="if(event.target===this)this.style.display='none'"><div class="card" id="summarycard"></div></div>
+<div id="schemas" class="overlay" onclick="if(event.target===this)this.style.display='none'"><div class="card" id="schemascard" style="max-width:1000px"></div></div>
+<div id="listing" class="overlay" onclick="if(event.target===this)this.style.display='none'"><div class="card" id="listingcard"></div></div>
+<div id="areas" class="overlay" onclick="if(event.target===this)this.style.display='none'"><div class="card" id="areascard" style="max-width:640px"></div></div>
+
+<!-- Plan data loaded at startup. scripts/build_editor.py replaces the content of this block. -->
+<script type="application/json" id="embedded-plan">
+{
+ "format": "kasiopa-home-plans",
+ "version": 2,
+ "meta": {
+  "id": "example-house",
+  "rev": 1,
+  "title": "Example house",
+  "level": "Ground floor",
+  "standard": "IEC",
+  "lang": "en"
+ },
+ "elements": [
+  {
+   "id": 1,
+   "type": "garden",
+   "rot": 0,
+   "label": "Plot",
+   "circuit": "",
+   "x": -50,
+   "y": -100,
+   "w": 1225,
+   "h": 825
+  },
+  {
+   "id": 2,
+   "type": "terrace",
+   "rot": 0,
+   "label": "South terrace",
+   "circuit": "",
+   "x": 300,
+   "y": 425,
+   "w": 400,
+   "h": 150
+  },
+  {
+   "id": 3,
+   "type": "path",
+   "rot": 0,
+   "label": "Driveway",
+   "circuit": "",
+   "x": 1000,
+   "y": 225,
+   "w": 100,
+   "h": 500
+  },
+  {
+   "id": 4,
+   "type": "pool",
+   "rot": 0,
+   "label": "Pool",
+   "circuit": "",
+   "x": 50,
+   "y": 525,
+   "w": 225,
+   "h": 125
+  },
+  {
+   "id": 5,
+   "type": "techroom",
+   "rot": 0,
+   "label": "Plant room",
+   "circuit": "",
+   "x": 300,
+   "y": 600,
+   "w": 100,
+   "h": 100
+  },
+  {
+   "id": 6,
+   "type": "solar",
+   "rot": 0,
+   "label": "PV array (roof)",
+   "circuit": "",
+   "x": 525,
+   "y": -75,
+   "w": 225,
+   "h": 62.5,
+   "notes": "6 panels, 2.4 kWp, on the roof above bedroom 1"
+  },
+  {
+   "id": 7,
+   "type": "room",
+   "rot": 0,
+   "label": "Living / kitchen",
+   "circuit": "",
+   "x": 0,
+   "y": 0,
+   "w": 500,
+   "h": 425
+  },
+  {
+   "id": 8,
+   "type": "room",
+   "rot": 0,
+   "label": "Bedroom 1",
+   "circuit": "",
+   "x": 500,
+   "y": 0,
+   "w": 250,
+   "h": 225
+  },
+  {
+   "id": 9,
+   "type": "room",
+   "rot": 0,
+   "label": "Bedroom 2",
+   "circuit": "",
+   "x": 750,
+   "y": 0,
+   "w": 250,
+   "h": 225
+  },
+  {
+   "id": 10,
+   "type": "room",
+   "rot": 0,
+   "label": "Bathroom",
+   "circuit": "",
+   "x": 500,
+   "y": 225,
+   "w": 200,
+   "h": 200
+  },
+  {
+   "id": 11,
+   "type": "room",
+   "rot": 0,
+   "label": "WC",
+   "circuit": "",
+   "x": 700,
+   "y": 225,
+   "w": 120,
+   "h": 200
+  },
+  {
+   "id": 12,
+   "type": "room",
+   "rot": 0,
+   "label": "Entrance",
+   "circuit": "",
+   "x": 820,
+   "y": 225,
+   "w": 180,
+   "h": 200
+  },
+  {
+   "id": 13,
+   "type": "countertop",
+   "rot": 0,
+   "label": "Worktop",
+   "circuit": "",
+   "x": 12.5,
+   "y": 50,
+   "w": 250,
+   "h": 37.5
+  },
+  {
+   "id": 14,
+   "type": "door",
+   "rot": 0,
+   "label": "Front door",
+   "circuit": "",
+   "x": 890,
+   "y": 419,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 15,
+   "type": "door",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 560,
+   "y": 219,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 16,
+   "type": "door",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 850,
+   "y": 219,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 17,
+   "type": "door",
+   "rot": 90,
+   "label": "",
+   "circuit": "",
+   "x": 477.5,
+   "y": 314,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 18,
+   "type": "door",
+   "rot": 90,
+   "label": "",
+   "circuit": "",
+   "x": 797.5,
+   "y": 374,
+   "w": 45,
+   "h": 12
+  },
+  {
+   "id": 19,
+   "type": "frenchdoor2",
+   "rot": 0,
+   "label": "To terrace",
+   "circuit": "",
+   "x": 320,
+   "y": 419,
+   "w": 150,
+   "h": 12
+  },
+  {
+   "id": 20,
+   "type": "window2",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 175,
+   "y": -6,
+   "w": 120,
+   "h": 12
+  },
+  {
+   "id": 21,
+   "type": "window",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 590,
+   "y": -6,
+   "w": 75,
+   "h": 12
+  },
+  {
+   "id": 22,
+   "type": "window",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 840,
+   "y": -6,
+   "w": 75,
+   "h": 12
+  },
+  {
+   "id": 23,
+   "type": "window",
+   "rot": 90,
+   "label": "",
+   "circuit": "",
+   "x": -45,
+   "y": 194,
+   "w": 90,
+   "h": 12
+  },
+  {
+   "id": 24,
+   "type": "slidinggate",
+   "rot": 0,
+   "label": "Car gate",
+   "circuit": "",
+   "x": 962.5,
+   "y": 719,
+   "w": 175,
+   "h": 12
+  },
+  {
+   "id": 25,
+   "type": "elecmeter",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 975,
+   "y": 300,
+   "notes": "Meter box on the facade"
+  },
+  {
+   "id": 26,
+   "type": "panel",
+   "rot": 0,
+   "label": "Main panel",
+   "circuit": "",
+   "x": 915,
+   "y": 300
+  },
+  {
+   "id": 27,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 350,
+   "y": 250
+  },
+  {
+   "id": 28,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 125,
+   "y": 250
+  },
+  {
+   "id": 29,
+   "type": "switch",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 470,
+   "y": 390
+  },
+  {
+   "id": 30,
+   "type": "shelly",
+   "rot": 0,
+   "label": "",
+   "circuit": "C1",
+   "x": 440,
+   "y": 390,
+   "notes": "Shelly 1 Mini Gen3 behind the switch, neutral available"
+  },
+  {
+   "id": 31,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 625,
+   "y": 125
+  },
+  {
+   "id": 32,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 875,
+   "y": 125
+  },
+  {
+   "id": 33,
+   "type": "twoway",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 530,
+   "y": 200
+  },
+  {
+   "id": 34,
+   "type": "ceilinglight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C2",
+   "x": 600,
+   "y": 350
+  },
+  {
+   "id": 35,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 50,
+   "y": 100
+  },
+  {
+   "id": 36,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 450,
+   "y": 60
+  },
+  {
+   "id": 37,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 250,
+   "y": 390
+  },
+  {
+   "id": 38,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C3",
+   "x": 30,
+   "y": 300
+  },
+  {
+   "id": 39,
+   "type": "hob",
+   "rot": 0,
+   "label": "",
+   "circuit": "C4",
+   "x": 60,
+   "y": 68.75
+  },
+  {
+   "id": 40,
+   "type": "oven",
+   "rot": 0,
+   "label": "",
+   "circuit": "C5",
+   "x": 100,
+   "y": 125
+  },
+  {
+   "id": 41,
+   "type": "dishwasher",
+   "rot": 0,
+   "label": "",
+   "circuit": "C6",
+   "x": 225,
+   "y": 125
+  },
+  {
+   "id": 42,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C7",
+   "x": 550,
+   "y": 50
+  },
+  {
+   "id": 43,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C7",
+   "x": 950,
+   "y": 50
+  },
+  {
+   "id": 44,
+   "type": "socket",
+   "rot": 0,
+   "label": "",
+   "circuit": "C7",
+   "x": 720,
+   "y": 190
+  },
+  {
+   "id": 45,
+   "type": "washer",
+   "rot": 0,
+   "label": "",
+   "circuit": "C8",
+   "x": 680,
+   "y": 340
+  },
+  {
+   "id": 46,
+   "type": "ventilation",
+   "rot": 0,
+   "label": "",
+   "circuit": "C9",
+   "x": 760,
+   "y": 320
+  },
+  {
+   "id": 47,
+   "type": "doorbell",
+   "rot": 0,
+   "label": "",
+   "circuit": "C9",
+   "x": 960,
+   "y": 400
+  },
+  {
+   "id": 48,
+   "type": "outdoorlight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C10",
+   "x": 400,
+   "y": 460
+  },
+  {
+   "id": 49,
+   "type": "outdoorlight",
+   "rot": 0,
+   "label": "",
+   "circuit": "C10",
+   "x": 1050,
+   "y": 340
+  },
+  {
+   "id": 50,
+   "type": "inverter",
+   "rot": 0,
+   "label": "",
+   "circuit": "C11",
+   "x": 975,
+   "y": 350,
+   "notes": "Hybrid inverter 3 kW"
+  },
+  {
+   "id": 51,
+   "type": "junctionbox",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 700,
+   "y": 62.5
+  },
+  {
+   "id": 52,
+   "type": "smoke",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 700,
+   "y": 125
+  },
+  {
+   "id": 53,
+   "type": "smoke",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 250,
+   "y": 300
+  },
+  {
+   "id": 54,
+   "type": "netcabinet",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 860,
+   "y": 345
+  },
+  {
+   "id": 55,
+   "type": "fiber",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1050,
+   "y": 400,
+   "notes": "Fiber from the street, conduit 40 mm"
+  },
+  {
+   "id": 56,
+   "type": "router",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 875,
+   "y": 395
+  },
+  {
+   "id": 57,
+   "type": "rj45",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 400,
+   "y": 30
+  },
+  {
+   "id": 58,
+   "type": "rj45",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 600,
+   "y": 150
+  },
+  {
+   "id": 59,
+   "type": "rj45",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 950,
+   "y": 150
+  },
+  {
+   "id": 60,
+   "type": "wifi",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 450,
+   "y": 220
+  },
+  {
+   "id": 61,
+   "type": "camera",
+   "rot": 135,
+   "label": "Gate camera",
+   "circuit": "",
+   "x": 1150,
+   "y": -50
+  },
+  {
+   "id": 62,
+   "type": "intercom",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1010,
+   "y": 700
+  },
+  {
+   "id": 63,
+   "type": "watermeter",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1050,
+   "y": 650,
+   "notes": "Street connection"
+  },
+  {
+   "id": 64,
+   "type": "manifold",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 640,
+   "y": 395
+  },
+  {
+   "id": 65,
+   "type": "waterheater",
+   "rot": 0,
+   "label": "",
+   "circuit": "C12",
+   "x": 530,
+   "y": 345
+  },
+  {
+   "id": 66,
+   "type": "shower",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 660,
+   "y": 265
+  },
+  {
+   "id": 67,
+   "type": "basin",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 560,
+   "y": 400
+  },
+  {
+   "id": 68,
+   "type": "wc",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 760,
+   "y": 395
+  },
+  {
+   "id": 69,
+   "type": "sink",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 175,
+   "y": 68.75
+  },
+  {
+   "id": 70,
+   "type": "drainpit",
+   "rot": 0,
+   "label": "IC1",
+   "circuit": "",
+   "x": 760,
+   "y": 500
+  },
+  {
+   "id": 71,
+   "type": "drainpit",
+   "rot": 0,
+   "label": "IC2 sewer",
+   "circuit": "",
+   "x": 760,
+   "y": 700
+  },
+  {
+   "id": 72,
+   "type": "drainpit",
+   "rot": 0,
+   "label": "IC3",
+   "circuit": "",
+   "x": 175,
+   "y": -50
+  },
+  {
+   "id": 73,
+   "type": "pipeCold",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     1050,
+     650
+    ],
+    [
+     1050,
+     462.5
+    ],
+    [
+     640,
+     462.5
+    ],
+    [
+     640,
+     407.5
+    ]
+   ],
+   "spec": "PEX 20"
+  },
+  {
+   "id": 74,
+   "type": "pipeHot",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     530,
+     356
+    ],
+    [
+     530,
+     375
+    ],
+    [
+     620,
+     375
+    ],
+    [
+     620,
+     395
+    ]
+   ],
+   "spec": "PEX 16"
+  },
+  {
+   "id": 75,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     660,
+     265
+    ],
+    [
+     660,
+     450
+    ],
+    [
+     760,
+     450
+    ],
+    [
+     760,
+     500
+    ]
+   ],
+   "spec": "PVC 50"
+  },
+  {
+   "id": 76,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     560,
+     400
+    ],
+    [
+     560,
+     450
+    ],
+    [
+     660,
+     450
+    ]
+   ],
+   "spec": "PVC 40"
+  },
+  {
+   "id": 77,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     760,
+     395
+    ],
+    [
+     760,
+     500
+    ]
+   ],
+   "spec": "PVC 110"
+  },
+  {
+   "id": 78,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     760,
+     500
+    ],
+    [
+     760,
+     700
+    ]
+   ],
+   "spec": "PVC 110"
+  },
+  {
+   "id": 79,
+   "type": "pipeDrain",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     175,
+     68.75
+    ],
+    [
+     175,
+     -50
+    ]
+   ],
+   "spec": "PVC 40"
+  },
+  {
+   "id": 80,
+   "type": "cable3G",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     915,
+     287.5
+    ],
+    [
+     915,
+     237.5
+    ],
+    [
+     712.5,
+     237.5
+    ],
+    [
+     712.5,
+     62.5
+    ],
+    [
+     700,
+     62.5
+    ]
+   ],
+   "spec": "3G1.5"
+  },
+  {
+   "id": 81,
+   "type": "poolpump",
+   "rot": 0,
+   "label": "",
+   "circuit": "C13",
+   "x": 325,
+   "y": 675
+  },
+  {
+   "id": 82,
+   "type": "skimmer",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 262.5,
+   "y": 550
+  },
+  {
+   "id": 83,
+   "type": "poolreturn",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 62.5,
+   "y": 587.5
+  },
+  {
+   "id": 84,
+   "type": "poollight",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 162.5,
+   "y": 637.5
+  },
+  {
+   "id": 85,
+   "type": "irrigctrl",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 375,
+   "y": 675
+  },
+  {
+   "id": 86,
+   "type": "sprinkler",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 500,
+   "y": 650
+  },
+  {
+   "id": 87,
+   "type": "sprinkler",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 700,
+   "y": 650
+  },
+  {
+   "id": 88,
+   "type": "sprinkler",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 900,
+   "y": 650
+  },
+  {
+   "id": 89,
+   "type": "pipeIrrig",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "pts": [
+    [
+     375,
+     675
+    ],
+    [
+     425,
+     675
+    ],
+    [
+     425,
+     650
+    ],
+    [
+     900,
+     650
+    ]
+   ],
+   "spec": "PE 25"
+  },
+  {
+   "id": 90,
+   "type": "tree",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": -12.5,
+   "y": 700
+  },
+  {
+   "id": 91,
+   "type": "tree",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 1137.5,
+   "y": 150
+  },
+  {
+   "id": 92,
+   "type": "shrub",
+   "rot": 0,
+   "label": "",
+   "circuit": "",
+   "x": 850,
+   "y": 520
+  },
+  {
+   "id": 93,
+   "type": "note",
+   "rot": 0,
+   "label": "Levels: +0.00 inside, -0.15 terrace",
+   "circuit": "",
+   "x": 40,
+   "y": 470
+  }
+ ],
+ "nextId": 94
+}
+</script>
+<script>
+"use strict";
+// ============ constants ============
+var FORMAT = "kasiopa-home-plans", FORMAT_VERSION = 2;
+var SCALE = 50;          // 1 m = 50 px
+var SNAP = 12.5;         // 25 cm
+var INK = "#1B1C1F", G50 = "#F4F5F7", G100 = "#E9EBEE", G200 = "#D8DBDF",
+    G400 = "#A6ABB2", G600 = "#6F747C", ACC = "#2563EB", PAPER = "#FBFBFC";
+var FONT = "Helvetica, Arial, sans-serif", MONO = "Menlo, Consolas, monospace";
+
+// kind: zone (resizable area), open (opening on a wall), sym (point symbol), pipe (polyline)
+var TYPES = {
+  // structure
+  room:        {kind:"zone", layer:"structure", name:"Room",              w:200, h:150},
+  garage:      {kind:"zone", layer:"structure", name:"Garage",            w:250, h:250},
+  countertop:  {kind:"zone", layer:"structure", name:"Countertop",        w:150, h:30},
+  door:        {kind:"open", layer:"structure", name:"Door",              w:45,  h:12},
+  slidingdoor: {kind:"open", layer:"structure", name:"Sliding door",      w:90,  h:12},
+  opening:     {kind:"open", layer:"structure", name:"Open passage",      w:90,  h:12},
+  window:      {kind:"open", layer:"structure", name:"Window",            w:60,  h:12},
+  window2:     {kind:"open", layer:"structure", name:"Double window",     w:120, h:12},
+  frenchdoor:  {kind:"open", layer:"structure", name:"French door",       w:80,  h:12},
+  frenchdoor2: {kind:"open", layer:"structure", name:"Double French door",w:150, h:12},
+  // exterior
+  terrace:     {kind:"zone", layer:"ext", name:"Terrace",       w:200, h:120},
+  garden:      {kind:"zone", layer:"ext", name:"Plot / garden", w:300, h:200},
+  pool:        {kind:"zone", layer:"ext", name:"Pool",          w:200, h:100},
+  path:        {kind:"zone", layer:"ext", name:"Path / drive",  w:100, h:200},
+  techroom:    {kind:"zone", layer:"ext", name:"Plant room",    w:100, h:100},
+  solar:       {kind:"zone", layer:"ext", name:"Solar panels",  w:150, h:100},
+  gate1:       {kind:"open", layer:"ext", name:"Gate, single",  w:100, h:12},
+  gate2:       {kind:"open", layer:"ext", name:"Gate, double",  w:175, h:12},
+  slidinggate: {kind:"open", layer:"ext", name:"Sliding gate",  w:175, h:12},
+  // electrical
+  socket:      {kind:"sym", layer:"elec", name:"Socket 16A"},
+  socket32:    {kind:"sym", layer:"elec", name:"Socket 32A"},
+  switch:      {kind:"sym", layer:"elec", name:"Switch"},
+  twoway:      {kind:"sym", layer:"elec", name:"Two-way switch"},
+  pushbutton:  {kind:"sym", layer:"elec", name:"Push button"},
+  ceilinglight:{kind:"sym", layer:"elec", name:"Ceiling light"},
+  walllight:   {kind:"sym", layer:"elec", name:"Wall light"},
+  spot:        {kind:"sym", layer:"elec", name:"Spotlight"},
+  outdoorlight:{kind:"sym", layer:"elec", name:"Outdoor light"},
+  panel:       {kind:"sym", layer:"elec", name:"Consumer unit"},
+  junctionbox: {kind:"sym", layer:"elec", name:"Junction box"},
+  elecmeter:   {kind:"sym", layer:"elec", name:"Electricity meter"},
+  doorbell:    {kind:"sym", layer:"elec", name:"Doorbell"},
+  ventilation: {kind:"sym", layer:"elec", name:"Ventilation fan"},
+  elecpit:     {kind:"sym", layer:"elec", name:"Electrical pit"},
+  // cables
+  cableL:      {kind:"pipe", layer:"elec", name:"Line conductor",   w:100},
+  cableN:      {kind:"pipe", layer:"elec", name:"Neutral conductor",w:100},
+  cablePE:     {kind:"pipe", layer:"elec", name:"Earth conductor",  w:100},
+  cable2G:     {kind:"pipe", layer:"elec", name:"Cable 2G", w:100},
+  cable3G:     {kind:"pipe", layer:"elec", name:"Cable 3G", w:100},
+  cable4G:     {kind:"pipe", layer:"elec", name:"Cable 4G", w:100},
+  cable5G:     {kind:"pipe", layer:"elec", name:"Cable 5G", w:100},
+  // appliances
+  boiler:      {kind:"sym", layer:"elec", name:"Boiler"},
+  waterheater: {kind:"sym", layer:"elec", name:"Water heater"},
+  oven:        {kind:"sym", layer:"elec", name:"Oven"},
+  hob:         {kind:"sym", layer:"elec", name:"Hob"},
+  washer:      {kind:"sym", layer:"elec", name:"Washing machine"},
+  dishwasher:  {kind:"sym", layer:"elec", name:"Dishwasher"},
+  fridge:      {kind:"sym", layer:"elec", name:"Fridge"},
+  aircon:      {kind:"sym", layer:"elec", name:"Air conditioning"},
+  inverter:    {kind:"sym", layer:"elec", name:"PV inverter"},
+  battery:     {kind:"sym", layer:"elec", name:"Battery"},
+  evcharger:   {kind:"sym", layer:"elec", name:"EV charger"},
+  // smart home
+  shelly:      {kind:"sym", layer:"domo", name:"Shelly"},
+  sonoff:      {kind:"sym", layer:"domo", name:"Sonoff"},
+  hub:         {kind:"sym", layer:"domo", name:"Smart home hub"},
+  thermostat:  {kind:"sym", layer:"domo", name:"Thermostat"},
+  sensor:      {kind:"sym", layer:"domo", name:"Sensor"},
+  // IT / security
+  netcabinet:  {kind:"sym", layer:"it", name:"Network cabinet"},
+  rj45:        {kind:"sym", layer:"it", name:"RJ45 outlet"},
+  tvsocket:    {kind:"sym", layer:"it", name:"TV outlet"},
+  router:      {kind:"sym", layer:"it", name:"Router"},
+  wifi:        {kind:"sym", layer:"it", name:"Wi-Fi access point"},
+  camera:      {kind:"sym", layer:"it", name:"Camera"},
+  intercom:    {kind:"sym", layer:"it", name:"Intercom"},
+  alarm:       {kind:"sym", layer:"it", name:"Alarm panel"},
+  smoke:       {kind:"sym", layer:"it", name:"Smoke detector"},
+  tvantenna:   {kind:"sym", layer:"it", name:"TV antenna"},
+  satellite:   {kind:"sym", layer:"it", name:"Satellite dish"},
+  fiber:       {kind:"sym", layer:"it", name:"Fiber entry"},
+  server:      {kind:"sym", layer:"it", name:"Server / NAS"},
+  // plumbing, irrigation, pool
+  watermeter:  {kind:"sym", layer:"plumb", name:"Water meter"},
+  gasmeter:    {kind:"sym", layer:"plumb", name:"Gas meter"},
+  valve:       {kind:"sym", layer:"plumb", name:"Valve"},
+  manifold:    {kind:"sym", layer:"plumb", name:"Manifold"},
+  waterpit:    {kind:"sym", layer:"plumb", name:"Water pit"},
+  drainpit:    {kind:"sym", layer:"plumb", name:"Inspection chamber"},
+  tap:         {kind:"sym", layer:"plumb", name:"Tap"},
+  sink:        {kind:"sym", layer:"plumb", name:"Kitchen sink"},
+  basin:       {kind:"sym", layer:"plumb", name:"Washbasin"},
+  wc:          {kind:"sym", layer:"plumb", name:"WC"},
+  shower:      {kind:"sym", layer:"plumb", name:"Shower"},
+  bathtub:     {kind:"sym", layer:"plumb", name:"Bathtub"},
+  irrigctrl:   {kind:"sym", layer:"plumb", name:"Irrigation controller"},
+  sprinkler:   {kind:"sym", layer:"plumb", name:"Sprinkler"},
+  poolpump:    {kind:"sym", layer:"plumb", name:"Pool pump / filter"},
+  skimmer:     {kind:"sym", layer:"plumb", name:"Skimmer"},
+  poolreturn:  {kind:"sym", layer:"plumb", name:"Pool return inlet"},
+  poollight:   {kind:"sym", layer:"plumb", name:"Pool light"},
+  pipeCold:    {kind:"pipe", layer:"plumb", name:"Cold water pipe", w:150},
+  pipeHot:     {kind:"pipe", layer:"plumb", name:"Hot water pipe",  w:150},
+  pipeDrain:   {kind:"pipe", layer:"plumb", name:"Drain pipe",      w:150},
+  pipeIrrig:   {kind:"pipe", layer:"plumb", name:"Irrigation line", w:150},
+  // decor
+  tree:        {kind:"sym", layer:"deco", name:"Tree"},
+  shrub:       {kind:"sym", layer:"deco", name:"Shrub"},
+  plant:       {kind:"sym", layer:"deco", name:"Plant"},
+  flowers:     {kind:"sym", layer:"deco", name:"Flowers"},
+  // annotation
+  note:        {kind:"sym", layer:"structure", name:"Text note"}
+};
+
+// v1 (French identifiers) -> v2. Old plans load transparently.
+var LEGACY = {
+  plandetravail:"countertop", porte:"door", portecoul:"slidingdoor", ouverture:"opening", fenetre:"window",
+  fenetredbl:"window2", portefen:"frenchdoor", portefendbl:"frenchdoor2", terrasse:"terrace", jardin:"garden",
+  piscine:"pool", allee:"path", localtech:"techroom", solaire:"solar", portail1:"gate1", portail2:"gate2",
+  portailcoul:"slidinggate", prise:"socket", prise32:"socket32", inter:"switch", vv:"twoway", bp:"pushbutton",
+  dcl:"ceilinglight", applique:"walllight", eclext:"outdoorlight", tableau:"panel", boitederiv:"junctionbox",
+  linky:"elecmeter", sonnette:"doorbell", vmc:"ventilation", arqelec:"elecpit", cablePH:"cableL", cableT:"cablePE",
+  chaudiere:"boiler", chauffeeau:"waterheater", four:"oven", lavelinge:"washer", lavevaisselle:"dishwasher",
+  frigo:"fridge", clim:"aircon", onduleur:"inverter", batterie:"battery", coffretcom:"netcabinet", tvprise:"tvsocket",
+  box:"router", interphone:"intercom", antennetv:"tvantenna", fibre:"fiber", serveur:"server", cptreau:"watermeter",
+  gaz:"gasmeter", vanne:"valve", nourrice:"manifold", arqeau:"waterpit", arqevac:"drainpit", robinet:"tap",
+  evier:"sink", lavabo:"basin", douche:"shower", baignoire:"bathtub", programmateur:"irrigctrl", asperseur:"sprinkler",
+  pompefilt:"poolpump", refoul:"poolreturn", projpisc:"poollight", pipeEF:"pipeCold", pipeEC:"pipeHot",
+  pipeEvac:"pipeDrain", arbre:"tree", arbuste:"shrub", plante:"plant", fleur:"flowers"
+};
+
+// draw order: large areas below, openings, then pipes/cables, then symbols on top
+var ZORDER = {garden:0, path:1, terrace:2, pool:3, solar:3, garage:4, techroom:4, room:5, countertop:5.5};
+var PIPECOLORS = {pipeCold:"#1565C0", pipeHot:"#C62828", pipeDrain:"#6F747C", pipeIrrig:"#2E7D32",
+  cableL:"#8D4B21", cableN:"#1565C0", cablePE:"#2E7D32",
+  cable2G:INK, cable3G:INK, cable4G:INK, cable5G:INK};
+var PIPEDASH = {pipeDrain:"10 6", pipeIrrig:"2 4", cablePE:"7 3", cable3G:"12 4", cable4G:"8 4 2 4", cable5G:"3 4"};
+var CABLETAG = {cableL:"L", cableN:"N", cablePE:"PE", cable2G:"2G", cable3G:"3G", cable4G:"4G", cable5G:"5G"};
+var LAYERNAMES = {structure:"Structure", ext:"Exterior", elec:"Electrical", domo:"Smart home", it:"IT / Security", plumb:"Plumbing / Pool", deco:"Decor"};
+
+// ============ state ============
+var state = {format:FORMAT, version:FORMAT_VERSION, meta:{}, elements:[], nextId:1};
+var view = {x:-40, y:-40, w:1400};
+var tool = "select";
+var selId = null;
+var layers = {structure:true, ext:true, elec:true, it:true, plumb:true, domo:true, deco:true};
+var drag = null;
+var autoAdjust = true;
+var undoStack = [], redoStack = [];
+var svg = document.getElementById("svg");
+
+function kind(e){ return TYPES[e.type] ? TYPES[e.type].kind : "sym"; }
+function tname(t){ return TYPES[t] ? TYPES[t].name : t; }
+function fmt(n, d){ return Number(n).toFixed(d===undefined?1:d); }
+function esc(t){ return String(t===undefined||t===null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function slug(s){ return String(s||"plan").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "plan"; }
+
+// ============ symbols ============
+function txt(y, s, col, size){ return '<text y="'+y+'" text-anchor="middle" font-size="'+(size||7.5)+'" font-family="'+MONO+'" fill="'+(col||INK)+'" stroke="none">'+s+'</text>'; }
+function symBody(t){
+  var s = 'stroke="'+INK+'" fill="none" stroke-width="1.8"';
+  var dot = function(cx,cy,r){ return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+INK+'" stroke="none"/>'; };
+  var pit = function(tag){ return '<rect x="-12" y="-12" width="24" height="24" '+s+'/><line x1="-12" y1="-12" x2="12" y2="12" '+s+'/><line x1="12" y1="-12" x2="-12" y2="12" '+s+'/>'+txt(24,tag,G600); };
+  switch(t){
+    case "socket":      return '<circle r="10" '+s+'/><line x1="-4" y1="-3" x2="-4" y2="3" '+s+'/><line x1="4" y1="-3" x2="4" y2="3" '+s+'/>';
+    case "socket32":    return '<circle r="10" '+s+'/><line x1="-4" y1="-3" x2="-4" y2="3" '+s+'/><line x1="4" y1="-3" x2="4" y2="3" '+s+'/>'+txt(22,"32A",G600,8);
+    case "switch":      return '<circle r="9" '+s+'/><line x1="3" y1="-3" x2="13" y2="-13" '+s+'/><line x1="9" y1="-13" x2="13" y2="-13" '+s+'/>';
+    case "twoway":      return '<circle r="9" '+s+'/><line x1="3" y1="-3" x2="13" y2="-13" '+s+'/><line x1="9" y1="-13" x2="13" y2="-13" '+s+'/><line x1="-3" y1="3" x2="-13" y2="13" '+s+'/><line x1="-9" y1="13" x2="-13" y2="13" '+s+'/>';
+    case "pushbutton":  return '<circle r="9" '+s+'/><circle r="3.5" '+s+'/>';
+    case "ceilinglight":return '<circle r="10" '+s+'/><line x1="-7" y1="-7" x2="7" y2="7" '+s+'/><line x1="7" y1="-7" x2="-7" y2="7" '+s+'/>';
+    case "walllight":   return '<path d="M -10 0 A 10 10 0 0 1 10 0 Z" '+s+'/><line x1="-5" y1="-8" x2="5" y2="-2" '+s+'/><line x1="5" y1="-8" x2="-5" y2="-2" '+s+'/>';
+    case "spot":        return '<circle r="6" '+s+'/><line x1="-6" y1="0" x2="6" y2="0" '+s+'/><line x1="0" y1="-6" x2="0" y2="6" '+s+'/>';
+    case "outdoorlight":return '<circle r="10" '+s+'/><line x1="-7" y1="-7" x2="7" y2="7" '+s+'/><line x1="7" y1="-7" x2="-7" y2="7" '+s+'/>'+txt(22,"EXT",G600,8);
+    case "panel":       return '<rect x="-16" y="-11" width="32" height="22" '+s+'/><line x1="-16" y1="-11" x2="16" y2="11" '+s+'/><line x1="-16" y1="0" x2="5" y2="11" '+s+'/><line x1="-5" y1="-11" x2="16" y2="0" '+s+'/>';
+    case "junctionbox": return '<circle r="8" '+s+'/>'+dot(0,0,2.2)+txt(20,"JB",G600);
+    case "elecmeter":   return '<rect x="-14" y="-11" width="28" height="22" '+s+'/>'+txt(4,"kWh",INK,8);
+    case "doorbell":    return '<circle r="10" '+s+'/><path d="M -5 3 Q -5 -6 0 -6 Q 5 -6 5 3 Z" '+s+'/>'+dot(0,5.5,1.3);
+    case "ventilation": return '<circle r="10" '+s+'/><path d="M 0 -2 Q 6 -8 2 -9 M 0 -2 Q 8 2 7 6 M 0 -2 Q -8 -4 -7 4" '+s+'/>';
+    case "elecpit":     return pit("ELEC");
+    case "boiler":      return '<rect x="-11" y="-13" width="22" height="26" rx="2" '+s+'/><path d="M 0 6 Q -5 1 0 -5 Q 2 0 4 -2 Q 6 3 0 6 Z" '+s+'/>';
+    case "waterheater": return '<circle r="11" '+s+'/>'+txt(3.5,"DHW");
+    case "oven":        return '<rect x="-12" y="-11" width="24" height="22" '+s+'/><line x1="-12" y1="-4" x2="12" y2="-4" '+s+'/><circle cy="3" r="4.5" '+s+'/>';
+    case "hob":         return '<rect x="-13" y="-13" width="26" height="26" '+s+'/><circle cx="-6" cy="-6" r="3.5" '+s+'/><circle cx="6" cy="-6" r="3.5" '+s+'/><circle cx="-6" cy="6" r="3.5" '+s+'/><circle cx="6" cy="6" r="3.5" '+s+'/>';
+    case "washer":      return '<rect x="-11" y="-11" width="22" height="22" '+s+'/><circle r="6.5" '+s+'/>'+dot(-7,-7,1.2);
+    case "dishwasher":  return '<rect x="-11" y="-11" width="22" height="22" '+s+'/><line x1="-11" y1="-5" x2="11" y2="-5" '+s+'/>'+txt(7,"DW",INK,8);
+    case "fridge":      return '<rect x="-9" y="-13" width="18" height="26" rx="2" '+s+'/><line x1="-9" y1="-4" x2="9" y2="-4" '+s+'/>';
+    case "aircon":      return '<rect x="-13" y="-8" width="26" height="16" rx="3" '+s+'/><path d="M -8 4 q 4 -4 8 0 t 8 0" '+s+'/>';
+    case "inverter":    return '<rect x="-13" y="-10" width="26" height="20" '+s+'/><line x1="-13" y1="10" x2="13" y2="-10" '+s+'/><path d="M -10 -4 q 2 -3 4 0 t 4 0" '+s+'/><line x1="2" y1="4" x2="10" y2="4" '+s+'/><line x1="2" y1="7" x2="10" y2="7" '+s+'/>';
+    case "battery":     return '<rect x="-12" y="-8" width="24" height="16" '+s+'/><line x1="-5" y1="-8" x2="-5" y2="-12" '+s+'/><line x1="5" y1="-8" x2="5" y2="-12" '+s+'/><line x1="-7" y1="0" x2="-3" y2="0" '+s+'/><line x1="-5" y1="-2" x2="-5" y2="2" '+s+'/><line x1="3" y1="0" x2="7" y2="0" '+s+'/>';
+    case "evcharger":   return '<rect x="-11" y="-14" width="22" height="28" rx="3" '+s+'/>'+txt(-2,"EV",INK,8)+'<path d="M -3 4 L 1 4 L -1 9 L 4 9" '+s+'/>';
+    case "shelly":      return '<circle r="10" '+s+'/>'+txt(3.5,"SH");
+    case "sonoff":      return '<rect x="-11" y="-8" width="22" height="16" rx="3" '+s+'/>'+txt(3.5,"SO");
+    case "hub":         return '<rect x="-11" y="-6" width="22" height="14" rx="3" '+s+'/><line x1="0" y1="-6" x2="0" y2="-13" '+s+'/>'+dot(0,-14,1.3);
+    case "thermostat":  return '<circle r="10" '+s+'/>'+txt(3.5,"T&#176;",INK,8);
+    case "sensor":      return '<circle r="9" '+s+'/><path d="M -4 -1 A 5 5 0 0 1 4 -1 M -7 -4 A 9 9 0 0 1 7 -4" '+s+'/>'+dot(0,3,1.8);
+    case "netcabinet":  return '<rect x="-15" y="-11" width="30" height="22" '+s+'/>'+txt(3.5,"NET");
+    case "rj45":        return '<rect x="-9" y="-9" width="18" height="18" '+s+'/><line x1="-4" y1="-3" x2="-4" y2="3" '+s+'/><line x1="0" y1="-3" x2="0" y2="3" '+s+'/><line x1="4" y1="-3" x2="4" y2="3" '+s+'/>'+txt(20,"RJ45",G600);
+    case "tvsocket":    return '<rect x="-9" y="-9" width="18" height="18" '+s+'/>'+txt(3.5,"TV",INK,8);
+    case "router":      return '<rect x="-13" y="-8" width="26" height="16" rx="3" '+s+'/>'+dot(7,0,1.5)+'<line x1="-9" y1="0" x2="2" y2="0" '+s+'/>';
+    case "wifi":        return dot(0,6,1.8)+'<path d="M -5 2 A 7 7 0 0 1 5 2" '+s+'/><path d="M -9 -3 A 13 13 0 0 1 9 -3" '+s+'/><path d="M -13 -8 A 19 19 0 0 1 13 -8" '+s+'/>';
+    case "camera":      return '<rect x="-11" y="-7" width="16" height="14" rx="2" '+s+'/><path d="M 5 -4 L 13 -8 L 13 8 L 5 4 Z" '+s+'/><circle cx="-3" cy="0" r="2.5" '+s+'/>';
+    case "intercom":    return '<rect x="-9" y="-12" width="18" height="24" rx="2" '+s+'/><circle cx="0" cy="-4" r="3" '+s+'/><line x1="-4" y1="5" x2="4" y2="5" '+s+'/><line x1="-4" y1="8" x2="4" y2="8" '+s+'/>';
+    case "alarm":       return '<rect x="-14" y="-10" width="28" height="20" rx="2" '+s+'/>'+txt(3.5,"ALM");
+    case "smoke":       return '<circle r="10" '+s+'/><circle r="5" '+s+'/>'+txt(22,"SD",G600);
+    case "tvantenna":   return '<line x1="0" y1="12" x2="0" y2="-8" '+s+'/><line x1="-10" y1="-8" x2="10" y2="-8" '+s+'/><line x1="-7" y1="-12" x2="7" y2="-12" '+s+'/><line x1="-4" y1="-16" x2="4" y2="-16" '+s+'/>';
+    case "satellite":   return '<path d="M -8 -8 A 12 12 0 0 1 8 8" '+s+'/><line x1="0" y1="0" x2="8" y2="-8" '+s+'/><circle cx="8" cy="-8" r="2" '+s+'/><line x1="-4" y1="8" x2="-4" y2="13" '+s+'/>';
+    case "fiber":       return '<rect x="-12" y="-9" width="24" height="18" rx="2" '+s+'/>'+txt(3.5,"FIB",INK,8);
+    case "server":      return '<rect x="-11" y="-13" width="22" height="26" rx="2" '+s+'/><line x1="-11" y1="-5" x2="11" y2="-5" '+s+'/><line x1="-11" y1="3" x2="11" y2="3" '+s+'/>'+dot(7,-9,1.2)+dot(7,-1,1.2)+dot(7,7,1.2);
+    case "watermeter":  return '<circle r="11" '+s+'/>'+txt(3.5,"H2O",INK,7);
+    case "gasmeter":    return '<rect x="-14" y="-11" width="28" height="22" '+s+'/>'+txt(4,"GAS",INK,8);
+    case "valve":       return '<path d="M -10 -6 L 0 0 L -10 6 Z M 10 -6 L 0 0 L 10 6 Z" '+s+'/>';
+    case "manifold":    return '<rect x="-16" y="-6" width="32" height="12" '+s+'/><line x1="-10" y1="6" x2="-10" y2="13" '+s+'/><line x1="-3" y1="6" x2="-3" y2="13" '+s+'/><line x1="4" y1="6" x2="4" y2="13" '+s+'/><line x1="11" y1="6" x2="11" y2="13" '+s+'/><line x1="-16" y1="0" x2="-22" y2="0" '+s+'/>';
+    case "waterpit":    return pit("WATER");
+    case "drainpit":    return '<rect x="-12" y="-12" width="24" height="24" '+s+'/><circle r="7" '+s+'/>'+txt(24,"DRAIN",G600);
+    case "tap":         return '<path d="M -9 -2 L 0 3 L -9 8 Z M 9 -2 L 0 3 L 9 8 Z" '+s+'/><line x1="0" y1="3" x2="0" y2="-7" '+s+'/><line x1="-5" y1="-7" x2="5" y2="-7" '+s+'/>';
+    case "sink":        return '<rect x="-14" y="-9" width="28" height="18" rx="2" '+s+'/><circle cx="-6" r="4.5" '+s+'/><circle cx="7" r="4.5" '+s+'/>';
+    case "basin":       return '<ellipse rx="17" ry="12" '+s+'/><line x1="-15" y1="-9" x2="15" y2="-9" stroke="'+INK+'" stroke-width="1"/><circle cy="-6" r="2" '+s+'/>';
+    case "wc":          return '<rect x="-13" y="-22" width="26" height="9" '+s+'/><ellipse cy="4" rx="11" ry="13" '+s+'/>';
+    case "shower":      return '<rect x="-20" y="-20" width="40" height="40" '+s+'/><circle r="3" '+s+'/><line x1="-20" y1="-20" x2="-7" y2="-7" stroke="'+INK+'" stroke-width="1"/>';
+    case "bathtub":     return '<rect x="-42" y="-18" width="84" height="36" rx="7" '+s+'/><ellipse cx="4" cy="0" rx="31" ry="11" stroke="'+INK+'" fill="none" stroke-width="1.2"/><circle cx="-31" cy="0" r="2.5" '+s+'/>';
+    case "irrigctrl":   return '<circle r="10" '+s+'/><line x1="0" y1="0" x2="0" y2="-6" '+s+'/><line x1="0" y1="0" x2="4" y2="2" '+s+'/>';
+    case "sprinkler":   return '<circle r="4" '+s+'/><path d="M -3 -6 A 8 8 0 0 1 3 -6" '+s+'/><path d="M -6 -9 A 13 13 0 0 1 6 -9" '+s+'/><line x1="-8" y1="2" x2="-12" y2="4" '+s+'/><line x1="8" y1="2" x2="12" y2="4" '+s+'/>';
+    case "poolpump":    return '<circle r="10" '+s+'/><path d="M -4 -5 L 6 0 L -4 5 Z" '+s+'/>';
+    case "skimmer":     return '<rect x="-10" y="-7" width="20" height="14" '+s+'/><line x1="-6" y1="0" x2="6" y2="0" '+s+'/>';
+    case "poolreturn":  return '<circle r="9" '+s+'/><line x1="-4" y1="0" x2="4" y2="0" '+s+'/><path d="M 1 -3 L 5 0 L 1 3" '+s+'/>';
+    case "poollight":   return '<circle r="7" '+s+'/><line x1="0" y1="-10" x2="0" y2="-13" '+s+'/><line x1="0" y1="10" x2="0" y2="13" '+s+'/><line x1="-10" y1="0" x2="-13" y2="0" '+s+'/><line x1="10" y1="0" x2="13" y2="0" '+s+'/><line x1="-7" y1="-7" x2="-9.5" y2="-9.5" '+s+'/><line x1="7" y1="-7" x2="9.5" y2="-9.5" '+s+'/><line x1="-7" y1="7" x2="-9.5" y2="9.5" '+s+'/><line x1="7" y1="7" x2="9.5" y2="9.5" '+s+'/>';
+    case "tree":        return '<circle r="11" '+s+'/><path d="M -6 -4 Q 0 -12 6 -4 M -8 3 Q -2 -3 4 3" stroke="'+G600+'" fill="none" stroke-width="1.2"/>'+dot(0,0,1.5);
+    case "shrub":       return '<circle cx="-5" cy="2" r="6" '+s+'/><circle cx="5" cy="2" r="6" '+s+'/><circle cx="0" cy="-5" r="6" '+s+'/>';
+    case "plant":       return '<path d="M -6 12 L 6 12 L 4 4 L -4 4 Z" '+s+'/><path d="M 0 4 Q -6 -4 -3 -10 M 0 4 Q 0 -6 0 -12 M 0 4 Q 6 -4 3 -10" '+s+'/>';
+    case "note":        return '<path d="M -6 -8 L 6 -8 L 6 4 L 2 4 L 0 8 L -2 4 L -6 4 Z" '+s+'/><line x1="-3" y1="-4" x2="3" y2="-4" '+s+'/><line x1="-3" y1="0" x2="3" y2="0" '+s+'/>';
+    case "flowers":     return '<circle r="3" '+s+'/><circle cy="-7" r="3.5" '+s+'/><circle cx="6.5" cy="-2" r="3.5" '+s+'/><circle cx="4" cy="6" r="3.5" '+s+'/><circle cx="-4" cy="6" r="3.5" '+s+'/><circle cx="-6.5" cy="-2" r="3.5" '+s+'/>';
+  }
+  return '<circle r="9" '+s+'/>'+txt(3,"?");
+}
+
+// ============ geometry ============
+function isPoly(e){ return !!(e.pts && e.pts.length>2 && kind(e)==="zone"); }
+function syncPolyBBox(e){
+  if(!isPoly(e)) return;
+  var minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+  e.pts.forEach(function(q){ minx=Math.min(minx,q[0]); miny=Math.min(miny,q[1]); maxx=Math.max(maxx,q[0]); maxy=Math.max(maxy,q[1]); });
+  e.x=minx; e.y=miny; e.w=maxx-minx; e.h=maxy-miny;
+}
+function ensurePoly(e){
+  if(isPoly(e)) return;
+  e.pts = [[e.x,e.y],[e.x+e.w,e.y],[e.x+e.w,e.y+e.h],[e.x,e.y+e.h]];
+}
+function pointInPoly(pts,x,y){
+  var inside=false;
+  for(var i=0,j=pts.length-1;i<pts.length;j=i++){
+    if((pts[i][1]>y)!==(pts[j][1]>y) && x < (pts[j][0]-pts[i][0])*(y-pts[i][1])/(pts[j][1]-pts[i][1])+pts[i][0]) inside=!inside;
+  }
+  return inside;
+}
+function zoneContains(z,x,y,m){ m=m||0; return x>=z.x-m && x<=z.x+z.w+m && y>=z.y-m && y<=z.y+z.h+m; }
+function pointInZone(z,x,y,m){ return isPoly(z) ? pointInPoly(z.pts,x,y) : zoneContains(z,x,y,m); }
+function zoneAreaPx(z){
+  if(isPoly(z)){
+    var a=0;
+    for(var i=0;i<z.pts.length;i++){ var p=z.pts[i], q=z.pts[(i+1)%z.pts.length]; a += p[0]*q[1]-q[0]*p[1]; }
+    return Math.abs(a)/2;
+  }
+  return z.w*z.h;
+}
+function zoneAreaM2(z){ return zoneAreaPx(z)/(SCALE*SCALE); }
+function refPoint(e){
+  var k = kind(e);
+  if(k==="pipe"){ var p = pipePts(e); return {x:p[0][0], y:p[0][1]}; }
+  if(k==="open"){ return {x:e.x+e.w/2, y:e.y+6}; }
+  if(k==="zone"){ return {x:e.x+e.w/2, y:e.y+e.h/2}; }
+  return {x:e.x, y:e.y};
+}
+
+// ============ pipes / cables ============
+function pipePts(e){
+  if(e.pts && e.pts.length>=2) return e.pts;
+  var ang = (e.rot||0)*Math.PI/180, w = e.w||150;
+  return [[e.x,e.y],[e.x+Math.cos(ang)*w, e.y+Math.sin(ang)*w]];
+}
+function pipeLen(e){
+  var p = pipePts(e), L = 0;
+  for(var i=1;i<p.length;i++) L += Math.hypot(p[i][0]-p[i-1][0], p[i][1]-p[i-1][1]);
+  return L/SCALE;
+}
+function ptsAttr(p){ return p.map(function(q){ return q[0]+","+q[1]; }).join(" "); }
+function pipeSVG(e){
+  var col = PIPECOLORS[e.type] || INK;
+  var dash = PIPEDASH[e.type] ? ' stroke-dasharray="'+PIPEDASH[e.type]+'"' : "";
+  var isCable = !!CABLETAG[e.type];
+  var wdt = e.type==="pipeDrain" ? 5 : isCable ? 2.2 : 3;
+  var p = pipePts(e);
+  var out = '<polyline points="'+ptsAttr(p)+'" fill="none" stroke="'+col+'" stroke-width="'+wdt+'"'+dash+' stroke-linecap="round" stroke-linejoin="round"/>';
+  var mx = (p[0][0]+p[1][0])/2, my = (p[0][1]+p[1][1])/2;
+  var tag = [CABLETAG[e.type]||"", e.spec||"", e.label||""].filter(function(x){return x;}).join(" ");
+  if(tag) out += '<text x="'+mx+'" y="'+(my-8)+'" text-anchor="middle" font-family="'+MONO+'" font-size="8.5" fill="'+col+'">'+esc(tag)+'</text>';
+  return out;
+}
+
+// ============ zones ============
+function zoneStyle(e){
+  var F = e.fill || null, t = e.type;
+  if(t==="room")       return {fill:F||"#FFFFFF", st:'stroke="'+INK+'" stroke-width="5"'};
+  if(t==="garage")     return {fill:F||G50,  st:'stroke="'+INK+'" stroke-width="5"'};
+  if(t==="countertop") return {fill:F||G100, st:'stroke="'+INK+'" stroke-width="1.5"'};
+  if(t==="terrace")    return {fill:F||G50,  st:'stroke="'+G400+'" stroke-width="2" stroke-dasharray="8 5"'};
+  if(t==="garden")     return {fill:F||"none", st:'stroke="'+G400+'" stroke-width="2" stroke-dasharray="3 5"'};
+  if(t==="path")       return {fill:F||G100, st:'stroke="'+G400+'" stroke-width="1.5" stroke-dasharray="6 4"'};
+  if(t==="techroom")   return {fill:F||G50,  st:'stroke="'+INK+'" stroke-width="2" stroke-dasharray="8 4"'};
+  if(t==="solar")      return {fill:F||G100, st:'stroke="'+INK+'" stroke-width="2"'};
+  if(t==="pool")       return {fill:F||"#E3EEF9", st:'stroke="'+G600+'" stroke-width="2"'};
+  return {fill:F||G50, st:'stroke="'+INK+'" stroke-width="2"'};
+}
+function zoneSVG(e){
+  var lbl = esc(e.label || tname(e.type));
+  var area = zoneAreaM2(e);
+  var cx = e.x+e.w/2, cy = e.y+e.h/2;
+  var st = zoneStyle(e), out = "";
+  // a zone without fill (plot) gets a wide transparent outline so it stays selectable
+  if(isPoly(e)){
+    var pa = ptsAttr(e.pts);
+    if(e.type==="garden") out += '<polygon points="'+pa+'" fill="none" stroke="rgba(0,0,0,0.001)" stroke-width="16"/>';
+    out += '<polygon points="'+pa+'" fill="'+st.fill+'" '+st.st+'/>';
+    // label at the centroid of the largest inside point near bbox center
+    if(!pointInPoly(e.pts,cx,cy)){ cx = (e.pts[0][0]+e.pts[1][0]+e.pts[2][0])/3; cy = (e.pts[0][1]+e.pts[1][1]+e.pts[2][1])/3; }
+  } else {
+    if(e.type==="garden") out += '<rect x="'+e.x+'" y="'+e.y+'" width="'+e.w+'" height="'+e.h+'" fill="none" stroke="rgba(0,0,0,0.001)" stroke-width="16"/>';
+    out += '<rect x="'+e.x+'" y="'+e.y+'" width="'+e.w+'" height="'+e.h+'"'+(e.type==="pool"?' rx="10"':'')+' fill="'+st.fill+'" '+st.st+'/>';
+    if(e.type==="solar"){
+      for(var sx=e.x+25; sx<e.x+e.w; sx+=25) out += '<line x1="'+sx+'" y1="'+e.y+'" x2="'+sx+'" y2="'+(e.y+e.h)+'" stroke="'+G400+'" stroke-width="1"/>';
+      for(var sy=e.y+25; sy<e.y+e.h; sy+=25) out += '<line x1="'+e.x+'" y1="'+sy+'" x2="'+(e.x+e.w)+'" y2="'+sy+'" stroke="'+G400+'" stroke-width="1"/>';
+    }
+    if(e.type==="pool"){
+      for(var i=1;i<=2;i++){
+        var wy = e.y + e.h*i/3;
+        out += '<path d="M '+(e.x+12)+' '+wy+' q 10 -6 20 0 t 20 0 t 20 0" stroke="'+G400+'" fill="none" stroke-width="1.5"/>';
+      }
+    }
+  }
+  if(e.type==="countertop" && e.h<40){
+    out += '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-family="'+FONT+'" font-size="10" fill="'+G600+'">'+lbl+'</text>';
+    return out;
+  }
+  // labels sit in the upper part of large zones so they do not collide with a central light point
+  var anchor = "middle", ly = cy-2;
+  if(e.type==="garden"){ anchor = "start"; cx = e.x+12; ly = e.y+20; }
+  else if(e.h >= 90 && (!isPoly(e) || pointInPoly(e.pts, cx, e.y+26))) ly = e.y+26;
+  out += '<text x="'+cx+'" y="'+ly+'" text-anchor="'+anchor+'" font-family="'+FONT+'" font-weight="600" font-size="13" fill="'+INK+'">'+lbl+'</text>';
+  out += '<text x="'+cx+'" y="'+(ly+15)+'" text-anchor="'+anchor+'" font-family="'+MONO+'" font-size="10" fill="'+G600+'">'+fmt(area)+' m&#178;</text>';
+  return out;
+}
+
+// ============ openings ============
+function openSVG(e){
+  var t = e.type, cx = e.x+e.w/2, cy = e.y+6, hw = e.w/2;
+  var o = '<g transform="translate('+cx+','+cy+') rotate('+(e.rot||0)+')">';
+  o += '<rect x="'+(-hw)+'" y="-6" width="'+e.w+'" height="12" fill="#FFFFFF" stroke="none"/>';
+  function ln(x1,y1,x2,y2,w,dash){ return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+INK+'" stroke-width="'+(w||1.6)+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>'; }
+  function arc(x1,y1,r,x2,y2,sweep){ return '<path d="M '+x1+' '+y1+' A '+r+' '+r+' 0 0 '+sweep+' '+x2+' '+y2+'" stroke="'+G400+'" fill="none" stroke-width="1.2" stroke-dasharray="4 3"/>'; }
+  function arrow(){ return '<path d="M '+(hw-24)+' 9 L '+(hw-8)+' 9 M '+(hw-12)+' 6 L '+(hw-8)+' 9 L '+(hw-12)+' 12" stroke="'+G600+'" fill="none" stroke-width="1.2"/>'; }
+  function posts(){ return '<rect x="'+(-hw-5)+'" y="-5" width="10" height="10" fill="'+INK+'"/><rect x="'+(hw-5)+'" y="-5" width="10" height="10" fill="'+INK+'"/>'; }
+  if(t==="door")             o += ln(-hw,0,-hw,-e.w,2)+arc(-hw,-e.w,e.w,hw,0,1);
+  else if(t==="window")      o += ln(-hw,-5,hw,-5)+ln(-hw,0,hw,0)+ln(-hw,5,hw,5);
+  else if(t==="window2")     o += ln(-hw,-5,hw,-5)+ln(-hw,0,hw,0)+ln(-hw,5,hw,5)+ln(0,-6,0,6,2.4);
+  else if(t==="frenchdoor")  o += ln(-hw,4,hw,4,1.2)+ln(-hw,-4,hw,-4,1.2)+ln(-hw,0,-hw,-e.w,2)+arc(-hw,-e.w,e.w,hw,0,1);
+  else if(t==="frenchdoor2") o += ln(-hw,4,hw,4,1.2)+ln(-hw,-4,hw,-4,1.2)+ln(-hw,0,-hw,-hw,2)+ln(hw,0,hw,-hw,2)+arc(-hw,-hw,hw,0,0,1)+arc(hw,-hw,hw,0,0,0);
+  else if(t==="slidingdoor") o += ln(-hw,-3,e.w*0.08,-3,2.4)+ln(-e.w*0.08,3,hw,3,2.4)+arrow();
+  else if(t==="opening")     o += ln(-hw,-6,-hw,6,2)+ln(hw,-6,hw,6,2)+ln(-hw,0,hw,0,1,"5 5");
+  else if(t==="gate1")       o += posts()+ln(-hw,0,-hw,-e.w,2.4)+arc(-hw,-e.w,e.w,hw,0,1);
+  else if(t==="gate2")       o += posts()+ln(-hw,0,-hw,-hw,2.4)+ln(hw,0,hw,-hw,2.4)+arc(-hw,-hw,hw,0,0,1)+arc(hw,-hw,hw,0,0,0);
+  else if(t==="slidinggate") o += posts()+ln(-hw,-3,hw,-3,2.4)+ln(-hw+10,3,hw-30,3,1.4)+arrow();
+  o += '</g>';
+  return o;
+}
+function openSwing(e){
+  var t = e.type;
+  if(t==="door"||t==="frenchdoor"||t==="gate1") return e.w;
+  if(t==="frenchdoor2"||t==="gate2") return e.w/2;
+  return 6;
+}
+function openEnds(e){
+  var cx = e.x+e.w/2, cy = e.y+6, a = (e.rot||0)*Math.PI/180, c = Math.cos(a), s = Math.sin(a);
+  return {cx:cx, cy:cy, c:c, s:s, a:[cx-c*e.w/2, cy-s*e.w/2], b:[cx+c*e.w/2, cy+s*e.w/2]};
+}
+
+function symSVG(e){
+  var out = '<g transform="translate('+e.x+','+e.y+') rotate('+(e.rot||0)+')">'+symBody(e.type)+'</g>';
+  if(e.circuit) out += '<text x="'+e.x+'" y="'+(e.y+(e.type==="socket32"||e.type==="outdoorlight"||e.type==="smoke"?34:24))+'" text-anchor="middle" font-family="'+MONO+'" font-size="8.5" fill="'+G600+'">'+esc(e.circuit)+'</text>';
+  if(e.label && e.type==="note") out += '<text x="'+(e.x+10)+'" y="'+(e.y+4)+'" font-family="'+FONT+'" font-size="11" font-weight="600" fill="'+INK+'">'+esc(e.label)+'</text>';
+  else if(e.label) out += '<text x="'+e.x+'" y="'+(e.y-17)+'" text-anchor="middle" font-family="'+FONT+'" font-size="9.5" fill="'+G600+'">'+esc(e.label)+'</text>';
+  return out;
+}
+
+function elemSVG(e){
+  var k = kind(e);
+  var inner = k==="zone" ? zoneSVG(e) : k==="open" ? openSVG(e) : k==="pipe" ? pipeSVG(e) : symSVG(e);
+  var hit = k==="pipe" ? '<polyline points="'+ptsAttr(pipePts(e))+'" fill="none" stroke="rgba(0,0,0,0.001)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>' : "";
+  return '<g data-id="'+e.id+'" style="cursor:move">'+hit+inner+'</g>';
+}
+
+// z-order: layer rank, then for zones larger area first (so small zones are never hidden)
+function zrank(e){
+  var k = kind(e);
+  if(k==="sym") return 10;
+  if(k==="pipe") return 8;
+  if(k==="open") return 6;
+  return ZORDER[e.type]!==undefined ? ZORDER[e.type] : 5;
+}
+function sorted(){
+  return state.elements.slice().sort(function(a,b){
+    var za = zrank(a), zb = zrank(b);
+    if(za!==zb) return za-zb;
+    var aa = kind(a)==="zone" ? zoneAreaPx(a) : -1;
+    var ab = kind(b)==="zone" ? zoneAreaPx(b) : -1;
+    return ab-aa;
+  });
+}
+
+function bounds(e){
+  var k = kind(e);
+  if(k==="zone") return {x:e.x, y:e.y, w:e.w, h:e.h};
+  if(k==="pipe"){
+    var p = pipePts(e), minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+    p.forEach(function(q){ minx=Math.min(minx,q[0]); miny=Math.min(miny,q[1]); maxx=Math.max(maxx,q[0]); maxy=Math.max(maxy,q[1]); });
+    return {x:minx-5, y:miny-5, w:maxx-minx+10, h:maxy-miny+10};
+  }
+  if(k==="open"){
+    var o = openEnds(e), sw = openSwing(e), hw = e.w/2;
+    var corners = [[-hw,-sw],[hw,-sw],[hw,6],[-hw,6]].map(function(q){ return [o.cx + q[0]*o.c - q[1]*o.s, o.cy + q[0]*o.s + q[1]*o.c]; });
+    var xs = corners.map(function(q){return q[0];}), ys = corners.map(function(q){return q[1];});
+    var x0 = Math.min.apply(null,xs), y0 = Math.min.apply(null,ys);
+    return {x:x0, y:y0, w:Math.max.apply(null,xs)-x0, h:Math.max.apply(null,ys)-y0};
+  }
+  if(e.type==="bathtub") return {x:e.x-44, y:e.y-44, w:88, h:88};
+  if(e.type==="shower") return {x:e.x-22, y:e.y-22, w:44, h:44};
+  return {x:e.x-14, y:e.y-14, w:28, h:28};
+}
+function getEl(id){ for(var i=0;i<state.elements.length;i++) if(state.elements[i].id===id) return state.elements[i]; return null; }
+function layerVisible(e){ return !!layers[TYPES[e.type] ? TYPES[e.type].layer : "elec"]; }
+
+// ============ render ============
+function render(){
+  var out = "";
+  var ratio = (svg.clientHeight/svg.clientWidth) || 0.7;
+  var vh = view.w * ratio;
+  var gx0 = Math.floor(view.x/SCALE)*SCALE, gy0 = Math.floor(view.y/SCALE)*SCALE;
+  out += '<g class="grid">';
+  for(var x=gx0; x<view.x+view.w+SCALE; x+=SCALE) out += '<line x1="'+x+'" y1="'+(view.y-SCALE)+'" x2="'+x+'" y2="'+(view.y+vh+SCALE)+'" stroke="'+G100+'" stroke-width="1"/>';
+  for(var y=gy0; y<view.y+vh+SCALE; y+=SCALE) out += '<line x1="'+(view.x-SCALE)+'" y1="'+y+'" x2="'+(view.x+view.w+SCALE)+'" y2="'+y+'" stroke="'+G100+'" stroke-width="1"/>';
+  out += '</g>';
+
+  var els = sorted();
+  for(var i=0;i<els.length;i++){ if(layerVisible(els[i])) out += elemSVG(els[i]); }
+
+  var sel = getEl(selId);
+  if(sel) out += selectionSVG(sel);
+  svg.setAttribute("viewBox", view.x+" "+view.y+" "+view.w+" "+vh);
+  svg.innerHTML = out;
+  renderProps();
+  updateDim(sel);
+  updateUndoButtons();
+  persist();
+}
+
+function handleRect(h, x, y, extra){ return '<rect data-handle="'+h+'" '+(extra||"")+' x="'+(x-6)+'" y="'+(y-6)+'" width="12" height="12" rx="3" fill="'+ACC+'" class="handle"/>'; }
+function selectionSVG(sel){
+  var out = "", b = bounds(sel), k = kind(sel);
+  out += '<rect class="selbox" x="'+(b.x-6)+'" y="'+(b.y-6)+'" width="'+(b.w+12)+'" height="'+(b.h+12)+'" fill="none" stroke="'+ACC+'" stroke-width="1.5" stroke-dasharray="5 4" pointer-events="none"/>';
+  if(k==="zone"){
+    var P = isPoly(sel) ? sel.pts : [[sel.x,sel.y],[sel.x+sel.w,sel.y],[sel.x+sel.w,sel.y+sel.h],[sel.x,sel.y+sel.h]];
+    for(var i=0;i<P.length;i++){
+      var A = P[i], B = P[(i+1)%P.length];
+      var mx = (A[0]+B[0])/2, my = (A[1]+B[1])/2;
+      var dx = B[0]-A[0], dy = B[1]-A[1], L = Math.hypot(dx,dy)||1;
+      var nx = dy/L, ny = -dx/L;
+      var ox = mx+nx*24, oy = my+ny*24;
+      if(pointInZone(sel, ox, oy, 0)){ ox = mx-nx*24; oy = my-ny*24; }
+      var cur = Math.abs(dx) > Math.abs(dy) ? "ns-resize" : "ew-resize";
+      out += '<rect data-handle="zedge" data-idx="'+i+'" x="'+(mx-7)+'" y="'+(my-7)+'" width="14" height="14" rx="3" fill="'+ACC+'" style="cursor:'+cur+'"><title>Drag to move this wall</title></rect>';
+      out += '<g data-handle="zadd" data-idx="'+i+'" style="cursor:copy"><circle data-handle="zadd" data-idx="'+i+'" cx="'+ox+'" cy="'+oy+'" r="8" fill="'+PAPER+'" stroke="'+ACC+'" stroke-width="1.5"><title>Click to add a corner on this wall</title></circle>'+
+        '<line data-handle="zadd" data-idx="'+i+'" x1="'+(ox-4)+'" y1="'+oy+'" x2="'+(ox+4)+'" y2="'+oy+'" stroke="'+ACC+'" stroke-width="1.6"/><line data-handle="zadd" data-idx="'+i+'" x1="'+ox+'" y1="'+(oy-4)+'" x2="'+ox+'" y2="'+(oy+4)+'" stroke="'+ACC+'" stroke-width="1.6"/></g>';
+    }
+    if(isPoly(sel)){
+      for(var j=0;j<sel.pts.length;j++) out += '<circle data-handle="zpt" data-idx="'+j+'" cx="'+sel.pts[j][0]+'" cy="'+sel.pts[j][1]+'" r="7" fill="'+PAPER+'" stroke="'+ACC+'" stroke-width="2" style="cursor:move"><title>Drag to move, double-click to delete</title></circle>';
+    } else {
+      out += '<rect data-handle="se" x="'+(sel.x+sel.w-7)+'" y="'+(sel.y+sel.h-7)+'" width="14" height="14" rx="3" fill="'+ACC+'" style="cursor:nwse-resize"><title>Drag to resize</title></rect>';
+    }
+  }
+  if(k==="open"){
+    var o = openEnds(sel);
+    out += '<rect data-handle="se" x="'+(o.b[0]-6)+'" y="'+(o.b[1]-6)+'" width="12" height="12" rx="3" fill="'+ACC+'" style="cursor:ew-resize"><title>Drag to change the width</title></rect>';
+  }
+  if(k==="pipe"){
+    var pp = pipePts(sel);
+    for(var m=0;m<pp.length-1;m++){
+      var mmx=(pp[m][0]+pp[m+1][0])/2, mmy=(pp[m][1]+pp[m+1][1])/2;
+      out += '<rect data-handle="mid" data-idx="'+m+'" x="'+(mmx-5)+'" y="'+(mmy-5)+'" width="10" height="10" fill="'+PAPER+'" stroke="'+ACC+'" stroke-width="1.5" style="cursor:copy"><title>Drag to add a bend</title></rect>';
+    }
+    for(var m2=0;m2<pp.length;m2++) out += '<circle data-handle="pt" data-idx="'+m2+'" cx="'+pp[m2][0]+'" cy="'+pp[m2][1]+'" r="7" fill="'+ACC+'" style="cursor:move"><title>Drag to move, double-click to delete</title></circle>';
+  }
+  return out;
+}
+function updateDim(sel){
+  var d = document.getElementById("dim");
+  if(!sel){ d.textContent = state.elements.length+" elements · 1 grid square = 1 m"; return; }
+  var k = kind(sel);
+  if(k==="zone") d.textContent = tname(sel.type)+" · "+fmt(sel.w/SCALE,2)+" x "+fmt(sel.h/SCALE,2)+" m · "+fmt(zoneAreaM2(sel))+" m²";
+  else if(k==="open") d.textContent = tname(sel.type)+" · "+fmt(sel.w/SCALE,2)+" m";
+  else if(k==="pipe") d.textContent = tname(sel.type)+" · "+fmt(pipeLen(sel),2)+" m";
+  else d.textContent = tname(sel.type)+" · x "+fmt(sel.x/SCALE,2)+" m, y "+fmt(sel.y/SCALE,2)+" m";
+}
+
+// ============ undo / redo ============
+function pushUndo(){
+  undoStack.push(JSON.stringify(state));
+  if(undoStack.length>60) undoStack.shift();
+  redoStack.length = 0;
+}
+function undo(){
+  if(!undoStack.length) return;
+  redoStack.push(JSON.stringify(state));
+  state = JSON.parse(undoStack.pop());
+  selId = null; drag = null; render();
+}
+function redo(){
+  if(!redoStack.length) return;
+  undoStack.push(JSON.stringify(state));
+  state = JSON.parse(redoStack.pop());
+  selId = null; drag = null; render();
+}
+function updateUndoButtons(){
+  var u = document.getElementById("btnUndo"), r = document.getElementById("btnRedo");
+  if(u) u.disabled = !undoStack.length;
+  if(r) r.disabled = !redoStack.length;
+}
+
+// ============ auto-adjust ============
+function toggleAdjust(){
+  autoAdjust = !autoAdjust;
+  var b = document.getElementById("btnAdj");
+  if(b){ b.textContent = "Auto-adjust: "+(autoAdjust?"ON":"OFF"); b.classList.toggle("primary", autoAdjust); }
+}
+// everything that travels with a zone when it moves
+function attachedTo(z){
+  var out = [], za = zoneAreaPx(z);
+  state.elements.forEach(function(e){
+    if(e===z) return;
+    var k = kind(e);
+    if(k==="sym"){
+      if(pointInZone(z, e.x, e.y, 0)) out.push({el:e, ox:e.x, oy:e.y});
+    } else if(k==="open"){
+      if(pointInZone(z, e.x+e.w/2, e.y+6, 10)) out.push({el:e, ox:e.x, oy:e.y});
+    } else if(k==="zone"){
+      if(zoneAreaPx(e) < za && pointInZone(z, e.x, e.y, 1) && pointInZone(z, e.x+e.w, e.y+e.h, 1)){
+        var a = {el:e, ox:e.x, oy:e.y};
+        if(isPoly(e)) a.pts0 = e.pts.map(function(q){ return q.slice(); });
+        out.push(a);
+      }
+    } else if(k==="pipe"){
+      var p = pipePts(e);
+      if(p.every(function(q){ return pointInZone(z, q[0], q[1], 1); })) out.push({el:e, pts0:p.map(function(q){ return q.slice(); })});
+    }
+  });
+  return out;
+}
+// rectangular zones sharing an edge with z, on each side
+function edgeNeighbors4(z){
+  var eps = 1, L=[], R=[], T=[], B=[];
+  state.elements.forEach(function(e){
+    if(e===z || kind(e)!=="zone" || isPoly(e)) return;
+    var ovY = e.y < z.y+z.h && e.y+e.h > z.y, ovX = e.x < z.x+z.w && e.x+e.w > z.x;
+    if(ovY && Math.abs((e.x+e.w) - z.x) < eps) L.push({el:e, ox:e.x, ow:e.w});
+    if(ovY && Math.abs(e.x - (z.x+z.w)) < eps) R.push({el:e, ox:e.x, ow:e.w});
+    if(ovX && Math.abs((e.y+e.h) - z.y) < eps) T.push({el:e, oy:e.y, oh:e.h});
+    if(ovX && Math.abs(e.y - (z.y+z.h)) < eps) B.push({el:e, oy:e.y, oh:e.h});
+  });
+  return {L:L, R:R, T:T, B:B};
+}
+// openings sitting on one wall of a rectangle (0 top, 1 right, 2 bottom, 3 left)
+function opensOnEdge(z, ei){
+  var out = [], tol = 12;
+  state.elements.forEach(function(e){
+    if(kind(e)!=="open") return;
+    var cx = e.x+e.w/2, cy = e.y+6, on = false;
+    if(ei===0) on = Math.abs(cy-z.y)<tol && cx>=z.x-tol && cx<=z.x+z.w+tol;
+    else if(ei===1) on = Math.abs(cx-(z.x+z.w))<tol && cy>=z.y-tol && cy<=z.y+z.h+tol;
+    else if(ei===2) on = Math.abs(cy-(z.y+z.h))<tol && cx>=z.x-tol && cx<=z.x+z.w+tol;
+    else on = Math.abs(cx-z.x)<tol && cy>=z.y-tol && cy<=z.y+z.h+tol;
+    if(on) out.push({el:e, ox:e.x, oy:e.y});
+  });
+  return out;
+}
+function applyNeighbors(n4, edges, dx, dy){
+  // edges: which sides follow; dx/dy: displacement of the wall(s)
+  var m = SNAP*2;
+  if(edges.L) n4.L.forEach(function(n){ n.el.w = Math.max(m, n.ow + dx); });
+  if(edges.R) n4.R.forEach(function(n){ n.el.x = n.ox + dx; n.el.w = Math.max(m, n.ow - dx); });
+  if(edges.T) n4.T.forEach(function(n){ n.el.h = Math.max(m, n.oh + dy); });
+  if(edges.B) n4.B.forEach(function(n){ n.el.y = n.oy + dy; n.el.h = Math.max(m, n.oh - dy); });
+}
+
+// ============ pointer ============
+function toWorld(ev){
+  var pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+  var p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return {x:p.x, y:p.y};
+}
+function snap(v){ return Math.round(v/SNAP)*SNAP; }
+
+svg.addEventListener("pointerdown", function(ev){
+  var p = toWorld(ev), t = ev.target;
+  var hEl = t.closest ? t.closest("[data-handle]") : null;
+  if(hEl){
+    var el = getEl(selId), h = hEl.dataset.handle, idx = parseInt(hEl.dataset.idx,10);
+    if(!el) return;
+    if(h==="zadd"){
+      pushUndo();
+      ensurePoly(el);
+      var A = el.pts[idx], B = el.pts[(idx+1)%el.pts.length];
+      el.pts.splice(idx+1, 0, [snap((A[0]+B[0])/2), snap((A[1]+B[1])/2)]);
+      syncPolyBBox(el); render(); return;
+    }
+    pushUndo();
+    if(h==="pt"){
+      drag = {mode:"pt", el:el, idx:idx};
+    } else if(h==="mid"){
+      el.pts = pipePts(el).slice();
+      el.pts.splice(idx+1, 0, [snap(p.x), snap(p.y)]);
+      drag = {mode:"pt", el:el, idx:idx+1, moved:true};
+    } else if(h==="zpt"){
+      drag = {mode:"zpt", el:el, idx:idx};
+    } else if(h==="zedge"){
+      if(isPoly(el)){
+        var n = el.pts.length;
+        drag = {mode:"pedge", el:el, idx:idx, sx:p.x, sy:p.y, a0:el.pts[idx].slice(), b0:el.pts[(idx+1)%n].slice()};
+      } else {
+        drag = {mode:"redge", el:el, idx:idx, sx:p.x, sy:p.y, ox:el.x, oy:el.y, ow:el.w, oh:el.h};
+        if(autoAdjust){ drag.neigh4 = edgeNeighbors4(el); drag.wallOpens = opensOnEdge(el, idx); }
+      }
+    } else {
+      drag = {mode:"resize", el:el, sx:p.x, sy:p.y, ox:el.x, oy:el.y, ow:el.w, oh:el.h};
+      if(kind(el)==="open"){ var o = openEnds(el); drag.a = o.a; drag.c = o.c; drag.s = o.s; }
+      if(autoAdjust && kind(el)==="zone") drag.neigh4 = edgeNeighbors4(el);
+    }
+    drag.undo = true;
+    svg.setPointerCapture(ev.pointerId);
+    return;
+  }
+  if(tool !== "select"){ placeAt(tool, p.x, p.y); return; }
+  var g = t.closest ? t.closest("g[data-id]") : null;
+  if(g){
+    selId = parseInt(g.dataset.id,10);
+    var el2 = getEl(selId);
+    pushUndo();
+    drag = {mode:"move", el:el2, sx:p.x, sy:p.y, ox:el2.x, oy:el2.y, moved:false, undo:true};
+    if(kind(el2)==="pipe"){
+      el2.pts = pipePts(el2).slice();
+      drag.pts0 = el2.pts.map(function(q){ return q.slice(); });
+    } else if(isPoly(el2)){
+      drag.pts0 = el2.pts.map(function(q){ return q.slice(); });
+    }
+    if(autoAdjust && kind(el2)==="zone"){ drag.attached = attachedTo(el2); drag.neigh4 = edgeNeighbors4(el2); }
+    svg.setPointerCapture(ev.pointerId);
+    render();
+  } else {
+    selId = null;
+    drag = {mode:"pan", sx:ev.clientX, sy:ev.clientY, ovx:view.x, ovy:view.y};
+    svg.setPointerCapture(ev.pointerId);
+    render();
+  }
+});
+
+svg.addEventListener("pointermove", function(ev){
+  if(!drag) return;
+  if(drag.mode==="pan"){
+    var k = view.w / svg.clientWidth;
+    view.x = drag.ovx - (ev.clientX-drag.sx)*k;
+    view.y = drag.ovy - (ev.clientY-drag.sy)*k;
+    render(); return;
+  }
+  var p = toWorld(ev), el = drag.el;
+  drag.moved = true;
+  if(drag.mode==="move"){
+    var dx = snap(p.x - drag.sx), dy = snap(p.y - drag.sy);
+    if(drag.pts0){
+      el.pts = drag.pts0.map(function(q){ return [q[0]+dx, q[1]+dy]; });
+      if(isPoly(el)) syncPolyBBox(el);
+    } else { el.x = drag.ox + dx; el.y = drag.oy + dy; }
+    if(dx===0 && dy===0 && !drag.hasMoved) drag.moved = false; else drag.hasMoved = true;
+    if(drag.attached){
+      drag.attached.forEach(function(a){
+        if(a.pts0){ a.el.pts = a.pts0.map(function(q){ return [q[0]+dx, q[1]+dy]; }); if(isPoly(a.el)) syncPolyBBox(a.el); }
+        else { a.el.x = a.ox + dx; a.el.y = a.oy + dy; }
+      });
+    }
+    if(drag.neigh4) applyNeighbors(drag.neigh4, {L:1,R:1,T:1,B:1}, dx, dy);
+  } else if(drag.mode==="resize"){
+    var ddx = p.x - drag.sx, ddy = p.y - drag.sy;
+    if(kind(el)==="open"){
+      var along = ddx*drag.c + ddy*drag.s;
+      var nw = Math.max(SNAP, snap(drag.ow + along));
+      var ncx = drag.a[0] + drag.c*nw/2, ncy = drag.a[1] + drag.s*nw/2;
+      el.w = nw; el.x = ncx - nw/2; el.y = ncy - 6;
+    } else {
+      el.w = Math.max(SNAP*2, snap(drag.ow + ddx));
+      el.h = Math.max(SNAP*2, snap(drag.oh + ddy));
+      if(drag.neigh4) applyNeighbors(drag.neigh4, {R:1,B:1}, el.w-drag.ow, el.h-drag.oh);
+    }
+  } else if(drag.mode==="redge"){
+    var i = drag.idx, m = SNAP*2, d;
+    if(i===0){ d = Math.min(snap(p.y-drag.sy), drag.oh-m); el.y = drag.oy+d; el.h = drag.oh-d; if(drag.neigh4) applyNeighbors(drag.neigh4,{T:1},0,d); }
+    else if(i===1){ d = Math.max(snap(p.x-drag.sx), m-drag.ow); el.w = drag.ow+d; if(drag.neigh4) applyNeighbors(drag.neigh4,{R:1},d,0); }
+    else if(i===2){ d = Math.max(snap(p.y-drag.sy), m-drag.oh); el.h = drag.oh+d; if(drag.neigh4) applyNeighbors(drag.neigh4,{B:1},0,d); }
+    else { d = Math.min(snap(p.x-drag.sx), drag.ow-m); el.x = drag.ox+d; el.w = drag.ow-d; if(drag.neigh4) applyNeighbors(drag.neigh4,{L:1},d,0); }
+    if(drag.wallOpens) drag.wallOpens.forEach(function(o){ if(i===0||i===2) o.el.y = o.oy+d; else o.el.x = o.ox+d; });
+  } else if(drag.mode==="pedge"){
+    var ex = snap(p.x-drag.sx), ey = snap(p.y-drag.sy);
+    var n = el.pts.length;
+    el.pts[drag.idx] = [drag.a0[0]+ex, drag.a0[1]+ey];
+    el.pts[(drag.idx+1)%n] = [drag.b0[0]+ex, drag.b0[1]+ey];
+    syncPolyBBox(el);
+  } else if(drag.mode==="zpt"){
+    el.pts[drag.idx] = [snap(p.x), snap(p.y)];
+    syncPolyBBox(el);
+  } else if(drag.mode==="pt"){
+    el.pts[drag.idx] = [snap(p.x), snap(p.y)];
+  }
+  render();
+});
+svg.addEventListener("pointerup", function(){
+  if(drag && drag.undo && !drag.moved) undoStack.pop();
+  drag = null;
+  updateUndoButtons();
+});
+
+svg.addEventListener("dblclick", function(ev){
+  var hEl = ev.target.closest ? ev.target.closest("[data-handle]") : null;
+  if(hEl){
+    var h = hEl.dataset.handle, idx = parseInt(hEl.dataset.idx,10), elp = getEl(selId);
+    if(h==="pt" && elp && elp.pts && elp.pts.length>2){ pushUndo(); elp.pts.splice(idx,1); render(); }
+    if(h==="zpt" && elp && isPoly(elp) && elp.pts.length>3){ pushUndo(); elp.pts.splice(idx,1); syncPolyBBox(elp); render(); }
+    return;
+  }
+  var g = ev.target.closest ? ev.target.closest("g[data-id]") : null;
+  if(!g) return;
+  var el = getEl(parseInt(g.dataset.id,10));
+  var v = prompt("Name:", el.label || tname(el.type));
+  if(v!==null){ pushUndo(); el.label = v; render(); }
+});
+
+window.addEventListener("keydown", function(ev){
+  var tag = ev.target.tagName;
+  if(tag==="INPUT" || tag==="TEXTAREA" || tag==="SELECT") return;
+  if((ev.ctrlKey||ev.metaKey) && (ev.key==="z"||ev.key==="Z")){ ev.preventDefault(); if(ev.shiftKey) redo(); else undo(); return; }
+  if((ev.ctrlKey||ev.metaKey) && (ev.key==="y"||ev.key==="Y")){ ev.preventDefault(); redo(); return; }
+  var el = getEl(selId);
+  if(ev.key==="Escape"){ setTool("select"); selId=null; render(); return; }
+  if(!el) return;
+  if((ev.ctrlKey||ev.metaKey) && (ev.key==="d"||ev.key==="D")){ ev.preventDefault(); duplicateSel(); return; }
+  if(ev.key==="Delete"||ev.key==="Backspace"){ removeSel(); ev.preventDefault(); return; }
+  if(ev.key==="r"||ev.key==="R"){ rotateSel(); return; }
+  var mv = {ArrowLeft:[-SNAP,0], ArrowRight:[SNAP,0], ArrowUp:[0,-SNAP], ArrowDown:[0,SNAP]}[ev.key];
+  if(mv){
+    pushUndo();
+    if(kind(el)==="pipe" || isPoly(el)){ el.pts = (kind(el)==="pipe"?pipePts(el):el.pts).map(function(q){ return [q[0]+mv[0], q[1]+mv[1]]; }); if(isPoly(el)) syncPolyBBox(el); }
+    else { el.x+=mv[0]; el.y+=mv[1]; }
+    render(); ev.preventDefault();
+  }
+});
+
+function placeAt(type, x, y){
+  var t = TYPES[type];
+  pushUndo();
+  var e = {id: state.nextId++, type:type, rot:0, label:"", circuit:""};
+  if(t.kind==="zone"){ e.x = snap(x-t.w/2); e.y = snap(y-t.h/2); e.w = t.w; e.h = t.h; }
+  else if(t.kind==="open"){ e.x = snap(x-t.w/2); e.y = snap(y)-6; e.w = t.w; e.h = 12; }
+  else if(t.kind==="pipe"){ e.pts = [[snap(x),snap(y)],[snap(x)+t.w,snap(y)]]; }
+  else { e.x = snap(x); e.y = snap(y); }
+  state.elements.push(e);
+  selId = e.id;
+  if(t.kind==="zone") setTool("select");
+  render();
+}
+function setTool(t){
+  tool = t;
+  var badge = document.getElementById("toolbadge");
+  if(t==="select"){ badge.style.display="none"; }
+  else { badge.style.display="block"; badge.textContent = "Place: "+tname(t)+" (Esc to stop)"; }
+  var btns = document.querySelectorAll(".pal button[data-type]");
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle("active", btns[i].dataset.type===t);
+  svg.style.cursor = t==="select" ? "default" : "crosshair";
+}
+function removeSel(){
+  if(!getEl(selId)) return;
+  pushUndo();
+  state.elements = state.elements.filter(function(e){ return e.id!==selId; });
+  selId = null; render();
+}
+function rotateSel(){
+  var el = getEl(selId); if(!el) return;
+  pushUndo();
+  var k = kind(el);
+  if(k==="zone"){
+    if(isPoly(el)){
+      var cx = el.x+el.w/2, cy = el.y+el.h/2;
+      el.pts = el.pts.map(function(q){ return [snap(cx-(q[1]-cy)), snap(cy+(q[0]-cx))]; });
+      syncPolyBBox(el);
+    } else { var w=el.w; el.w=el.h; el.h=w; }
+  } else if(k==="pipe"){
+    var p = pipePts(el), o = p[0];
+    el.pts = p.map(function(q){ return [o[0]-(q[1]-o[1]), o[1]+(q[0]-o[0])]; });
+  } else el.rot = ((el.rot||0)+90)%360;
+  render();
+}
+function duplicateSel(){
+  var el = getEl(selId); if(!el) return;
+  pushUndo();
+  var c = JSON.parse(JSON.stringify(el));
+  c.id = state.nextId++;
+  if(c.pts) c.pts = c.pts.map(function(q){ return [q[0]+SNAP*2, q[1]+SNAP*2]; });
+  if(c.x!==undefined){ c.x += SNAP*2; c.y += SNAP*2; }
+  state.elements.push(c); selId = c.id; render();
+}
+function setField(id, f, v, num){
+  var e = getEl(id); if(!e) return;
+  pushUndo();
+  if(num!==undefined){
+    var px = Math.max(num, parseFloat(v)*SCALE);
+    if(!isNaN(px)) e[f] = px;
+  } else if(f==="fill"){ if(/^#[0-9a-fA-F]{3,8}$/.test(v)) e.fill = v; }
+  else e[f] = String(v);
+  render();
+}
+function setMeta(f, v){ pushUndo(); state.meta[f] = (f==="standard" && !STANDARDS.hasOwnProperty(v)) ? "IEC" : String(v); render(); }
+
+// ============ sidebar ============
+var PRESETS = {
+  all:   {structure:1, ext:1, elec:1, it:1, plumb:1, domo:1, deco:1},
+  house: {structure:1, ext:1, elec:0, it:0, plumb:0, domo:0, deco:1},
+  elec:  {structure:1, ext:1, elec:1, it:0, plumb:0, domo:1, deco:0},
+  plumb: {structure:1, ext:1, elec:0, it:0, plumb:1, domo:0, deco:0},
+  it:    {structure:1, ext:1, elec:0, it:1, plumb:0, domo:0, deco:0}
+};
+var GROUPS = [
+  ["01","Structure", ["room","garage","door","slidingdoor","opening","window","window2","frenchdoor","frenchdoor2","note"]],
+  ["02","Exterior", ["terrace","garden","pool","path","techroom","solar","gate1","gate2","slidinggate"]],
+  ["03","Electrical", ["socket","socket32","switch","twoway","pushbutton","ceilinglight","walllight","spot","outdoorlight","panel","junctionbox","elecmeter","doorbell","ventilation","elecpit"]],
+  ["04","Cables", ["cableL","cableN","cablePE","cable2G","cable3G","cable4G","cable5G"]],
+  ["05","Appliances", ["boiler","waterheater","oven","hob","washer","dishwasher","fridge","aircon","inverter","battery","evcharger"]],
+  ["06","Kitchen", ["countertop","sink"]],
+  ["07","Smart home", ["shelly","sonoff","hub","thermostat","sensor"]],
+  ["08","IT / Security", ["netcabinet","rj45","tvsocket","router","wifi","camera","intercom","alarm","smoke","tvantenna","satellite","fiber","server"]],
+  ["09","Plumbing", ["watermeter","gasmeter","valve","manifold","waterpit","drainpit","tap","sink","basin","wc","shower","bathtub","pipeCold","pipeHot","pipeDrain"]],
+  ["10","Irrigation / Pool", ["irrigctrl","sprinkler","pipeIrrig","poolpump","skimmer","poolreturn","poollight"]],
+  ["11","Decor", ["tree","shrub","plant","flowers"]]
+];
+var palFilter = "";
+function setPreset(name){
+  var p = PRESETS[name];
+  Object.keys(p).forEach(function(k){ layers[k] = !!p[k]; });
+  buildSidebar(); render();
+}
+function paletteIcon(t){
+  var T = TYPES[t];
+  if(T.kind==="sym") return '<svg viewBox="-22 -22 44 44">'+symBody(t)+'</svg>';
+  if(T.kind==="pipe") return '<svg viewBox="0 0 32 32"><line x1="3" y1="16" x2="29" y2="16" stroke="'+PIPECOLORS[t]+'" stroke-width="3" '+(PIPEDASH[t]?'stroke-dasharray="'+PIPEDASH[t]+'"':'')+' stroke-linecap="round"/></svg>';
+  if(T.kind==="open"){
+    var e = {type:t, x:-T.w/2, y:-6, w:T.w, h:12, rot:0}, sw = openSwing(e);
+    return '<svg viewBox="'+(-T.w/2-8)+' '+(-sw-6)+' '+(T.w+16)+' '+(sw+14)+'">'+openSVG(e)+'</svg>';
+  }
+  return '<svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="20" fill="none" stroke="'+INK+'" stroke-width="2" '+(T.layer==="ext"?'stroke-dasharray="4 3"':'')+'/></svg>';
+}
+function buildSidebar(){
+  var html = '<input id="search" placeholder="Search elements..." value="'+esc(palFilter)+'" oninput="palFilter=this.value;buildSidebar();var s=document.getElementById(\'search\');s.focus();s.setSelectionRange(s.value.length,s.value.length)">';
+  if(!palFilter){
+    html += '<div class="kicker"><span class="num">00</span>Views</div><div class="pal">'+
+      '<button onclick="setPreset(\'all\')">All</button><button onclick="setPreset(\'house\')">House</button>'+
+      '<button onclick="setPreset(\'elec\')">Electrical</button><button onclick="setPreset(\'plumb\')">Plumbing</button>'+
+      '<button onclick="setPreset(\'it\')">IT / Security</button><button onclick="showSchemas()">Panel diagram</button></div>';
+    html += '<div class="kicker"><span class="num">00</span>Layers</div>';
+    ["structure","ext","elec","domo","it","plumb","deco"].forEach(function(L){
+      html += '<label class="layerrow"><input type="checkbox" '+(layers[L]?"checked":"")+' onchange="layers.'+L+'=this.checked;render()"> '+LAYERNAMES[L]+'</label>';
+    });
+  }
+  var f = palFilter.toLowerCase();
+  GROUPS.forEach(function(G){
+    var items = G[2].filter(function(t){ return !f || tname(t).toLowerCase().indexOf(f)>=0 || t.toLowerCase().indexOf(f)>=0; });
+    if(!items.length) return;
+    html += '<div class="kicker"><span class="num">'+G[0]+'</span>'+G[1]+'</div><div class="pal">';
+    items.forEach(function(t){ html += '<button data-type="'+t+'" class="'+(tool===t?"active":"")+'" onclick="setTool(\''+t+'\')" title="'+t+'">'+paletteIcon(t)+'<span>'+tname(t)+'</span></button>'; });
+    html += '</div>';
+  });
+  document.getElementById("sidebar").innerHTML = html;
+}
+
+// ============ properties ============
+function renderProps(){
+  var box = document.getElementById("props");
+  var el = getEl(selId);
+  document.getElementById("plantitle").textContent = (state.meta.title||"")+(state.meta.level?" · "+state.meta.level:"");
+  if(!el){
+    var so = Object.keys(STANDARDS).map(function(k){ return '<option value="'+k+'"'+(state.meta.standard===k?" selected":"")+'>'+STANDARDS[k].name+'</option>'; }).join("");
+    box.innerHTML = '<div class="kicker"><span class="num">P</span>Plan</div>'+
+      '<div class="field"><label>Title</label><input value="'+esc(state.meta.title)+'" onchange="setMeta(\'title\',this.value)"></div>'+
+      '<div class="field"><label>Level / floor</label><input value="'+esc(state.meta.level)+'" placeholder="e.g. Ground floor" onchange="setMeta(\'level\',this.value)"></div>'+
+      '<div class="field"><label>Electrical standard</label><select onchange="setMeta(\'standard\',this.value)">'+so+'</select></div>'+
+      '<div class="hint"><b>Select</b> click an element<br><b>Move</b> drag it<br><b>Rename</b> double-click<br><b>Rotate</b> R · <b>Delete</b> Del<br><b>Duplicate</b> Cmd/Ctrl+D<br><b>Nudge</b> arrow keys (25 cm)<br><b>Undo / redo</b> Cmd/Ctrl+Z, +Shift<br><b>Pan</b> drag the background · <b>Zoom</b> wheel<br><br>'+
+      '<b>Rooms</b>: the filled square on a wall moves that wall, the + adds a corner (L-shapes), round corner handles move, double-click removes.<br><br>'+
+      '<b>Auto-adjust ON</b>: moving a room carries its content and neighbouring rooms follow shared walls.<br><br>'+
+      'Give electrical points a <b>circuit</b> (C1, C2...) to generate the panel diagram and the checks.</div>';
+    return;
+  }
+  var t = TYPES[el.type] || {kind:"sym", name:el.type};
+  var html = '<div class="kicker"><span class="num">#'+el.id+'</span>'+esc(t.name)+'</div>';
+  html += '<div class="field"><label>Name</label><input value="'+esc(el.label)+'" onchange="setField('+el.id+',\'label\',this.value)"></div>';
+  if(t.kind==="sym"){
+    html += '<div class="field"><label>Circuit</label><input placeholder="e.g. C3" value="'+esc(el.circuit)+'" onchange="setField('+el.id+',\'circuit\',this.value)"></div>';
+  }
+  if(t.kind==="zone"){
+    if(!isPoly(el)){
+      html += '<div class="field"><label>Width (m)</label><input type="number" step="0.25" value="'+(el.w/SCALE)+'" onchange="setField('+el.id+',\'w\',this.value,25)"></div>';
+      html += '<div class="field"><label>Depth (m)</label><input type="number" step="0.25" value="'+(el.h/SCALE)+'" onchange="setField('+el.id+',\'h\',this.value,25)"></div>';
+    } else {
+      html += '<div class="field"><label>Shape</label><input value="Polygon, '+el.pts.length+' corners" disabled></div>';
+      html += '<button onclick="pushUndo();delete getEl('+el.id+').pts;render()">Back to rectangle</button>';
+    }
+    html += '<div class="field" style="margin-top:9px"><label>Area</label><input value="'+fmt(zoneAreaM2(el),2)+' m²" disabled></div>';
+  }
+  if(t.kind==="open"){
+    html += '<div class="field"><label>Width (m)</label><input type="number" step="0.05" value="'+(el.w/SCALE)+'" onchange="setField('+el.id+',\'w\',this.value,10)"></div>';
+  }
+  if(t.kind==="pipe"){
+    html += '<div class="field"><label>Total length</label><input value="'+fmt(pipeLen(el),2)+' m" disabled></div>';
+    html += '<div class="field"><label>Type / cross-section</label><input placeholder="e.g. 3G2.5 or PEX 16" value="'+esc(el.spec||"")+'" onchange="setField('+el.id+',\'spec\',this.value)"></div>';
+    html += '<div class="hint">Hollow square on a segment: drag to add a bend. Round handle: move a point. Double-click a round handle: remove it.</div>';
+  }
+  if(t.kind==="zone"){
+    html += '<div class="field"><label>Fill colour (optional)</label><input type="color" value="'+(el.fill||"#FFFFFF")+'" style="height:32px;padding:2px" onchange="setField('+el.id+',\'fill\',this.value)">'+
+      (el.fill? '<button style="margin-top:4px" onclick="pushUndo();delete getEl('+el.id+').fill;render()">Default colour</button>' : '')+'</div>';
+  }
+  html += '<div class="field"><label>Notes</label><textarea rows="3" onchange="setField('+el.id+',\'notes\',this.value)">'+esc(el.notes||"")+'</textarea></div>';
+  html += '<div class="btnrow"><button onclick="rotateSel()">Rotate</button><button onclick="duplicateSel()">Duplicate</button><button class="danger" onclick="removeSel()">Delete</button></div>';
+  box.innerHTML = html;
+}
+
+// ============ electrical standards ============
+var STANDARDS = {
+  IEC:      {name:"Generic (IEC 60364)",   head:["Main switch","RCD 30mA"],  note:"Split circuits across several 30mA RCDs; type A for cooking, washing machine, EV and PV."},
+  NFC15100: {name:"France NF C 15-100",    head:["AGCP","500mA"],            note:"At least two 30mA RCDs; type A for hob, washing machine, EV and PV circuits."},
+  REBT:     {name:"Spain REBT ITC-BT-25",  head:["IGA","+ ID 30mA"],         note:"At least one 30mA RCD per five circuits. Circuit naming C1 to C13 per ITC-BT-25."},
+  BS7671:   {name:"UK BS 7671",            head:["Main switch","RCD / RCBO"],note:"30mA RCD protection on socket and lighting circuits. EV: type A plus 6mA DC detection."}
+};
+// [amps, section mm2, max points per circuit (null = no fixed limit), RCD type, extra module]
+var RULES = {
+  lighting:   {IEC:[10,"1.5",8],  NFC15100:[10,"1.5",8],  REBT:[10,"1.5",30], BS7671:[6,"1.5",null]},
+  socket:     {IEC:[16,"2.5",12], NFC15100:[20,"2.5",12], REBT:[16,"2.5",20], BS7671:[32,"2.5",null,"","Ring final"]},
+  cooking:    {IEC:[32,"6",1,"A"],NFC15100:[32,"6",1,"A"],REBT:[25,"6",2,"A"], BS7671:[32,"6",1,"A"]},
+  oven:       {IEC:[20,"2.5",1],  NFC15100:[20,"2.5",1],  REBT:[25,"6",2],    BS7671:[16,"2.5",1]},
+  washer:     {IEC:[20,"2.5",1,"A"],NFC15100:[20,"2.5",1,"A"],REBT:[20,"4",3,"A"],BS7671:[20,"2.5",1,"A"]},
+  dishwasher: {IEC:[20,"2.5",1],  NFC15100:[20,"2.5",1],  REBT:[20,"4",3],    BS7671:[20,"2.5",1]},
+  waterheater:{IEC:[20,"2.5",1,"","Day/night contactor"], NFC15100:[20,"2.5",1,"","Day/night contactor"], REBT:[20,"4",3], BS7671:[16,"2.5",1]},
+  aircon:     {IEC:[20,"2.5",1],  NFC15100:[20,"2.5",1],  REBT:[25,"6",null], BS7671:[20,"2.5",1]},
+  fridge:     {IEC:[16,"2.5",1],  NFC15100:[16,"2.5",1],  REBT:[16,"2.5",20], BS7671:[32,"2.5",null,"","Ring final"]},
+  boiler:     {IEC:[10,"1.5",1],  NFC15100:[10,"1.5",1],  REBT:[16,"2.5",null],BS7671:[6,"1.5",1,"","Fused spur 3A"]},
+  pv:         {IEC:[20,"4",1,"A","SPD + DC isolator"], NFC15100:[20,"4",1,"A","SPD + DC isolator"], REBT:[20,"4",1,"A","SPD + DC isolator"], BS7671:[20,"4",1,"A","SPD + DC isolator"]},
+  ventilation:{IEC:[2,"1.5",1],   NFC15100:[2,"1.5",1],   REBT:[10,"1.5",null],BS7671:[6,"1.5",null]},
+  doorbell:   {IEC:[2,"1.5",1,"","Bell transformer"], NFC15100:[2,"1.5",1,"","Bell transformer"], REBT:[10,"1.5",null,"","Bell transformer"], BS7671:[6,"1.5",null,"","Bell transformer"]},
+  ev:         {IEC:[32,"6",1,"A","Dedicated RCD"], NFC15100:[40,"10",1,"A","Dedicated RCD"], REBT:[32,"6",1,"A","Dedicated RCD (C13)"], BS7671:[32,"6",1,"A","RCD + 6mA DC, PEN protection"]}
+};
+var CAT = {ceilinglight:"lighting", walllight:"lighting", spot:"lighting", outdoorlight:"lighting",
+  switch:"lighting", twoway:"lighting", pushbutton:"lighting", socket:"socket", socket32:"cooking", hob:"cooking",
+  oven:"oven", washer:"washer", dishwasher:"dishwasher", waterheater:"waterheater", aircon:"aircon", fridge:"fridge",
+  boiler:"boiler", inverter:"pv", battery:"pv", ventilation:"ventilation", doorbell:"doorbell", evcharger:"ev"};
+var CONTROLS = {switch:1, twoway:1, pushbutton:1};
+var CATPRIO = ["ev","cooking","pv","washer","oven","dishwasher","aircon","waterheater","fridge","boiler","socket","ventilation","doorbell","lighting"];
+function stdKey(){ return STANDARDS.hasOwnProperty(state.meta.standard) ? state.meta.standard : "IEC"; }
+function circuitList(){
+  var map = {}, sk = stdKey();
+  state.elements.forEach(function(e){
+    if(kind(e)!=="sym" || !e.circuit) return;
+    var c = map[e.circuit] = map[e.circuit] || {name:e.circuit, count:0, types:{}, cats:{}, els:[]};
+    c.count++; c.els.push(e);
+    c.types[e.type] = (c.types[e.type]||0)+1;
+    if(CAT[e.type]) c.cats[CAT[e.type]] = (c.cats[CAT[e.type]]||0) + (CONTROLS[e.type]?0:1);
+  });
+  return Object.keys(map).sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true}); }).map(function(k){
+    var c = map[k];
+    c.cat = null;
+    for(var i=0;i<CATPRIO.length;i++) if(c.cats[CATPRIO[i]]!==undefined){ c.cat = CATPRIO[i]; break; }
+    var r = c.cat ? RULES[c.cat][sk] : [16,"2.5",null];
+    c.rating = {a:r[0]+"A", s:r[1]+" mm²", max:r[2], rcd:r[3]||"", module:r[4]||""};
+    if(c.types.pushbutton && sk!=="BS7671" && !c.rating.module) c.rating.module = "Latching relay";
+    c.points = c.cat ? c.cats[c.cat] : c.count;
+    c.desc = Object.keys(c.types).map(function(t){ return c.types[t]+" "+tname(t).toLowerCase(); }).join(", ");
+    return c;
+  });
+}
+
+// ============ checks ============
+var WATERPOINTS = {sink:1, basin:1, wc:1, shower:1, bathtub:1, washer:1, dishwasher:1};
+function smallestZoneAt(x, y){
+  var best = null;
+  state.elements.forEach(function(z){
+    if(kind(z)!=="zone" || !pointInZone(z, x, y, 0)) return;
+    if(!best || zoneAreaPx(z) < zoneAreaPx(best)) best = z;
+  });
+  return best;
+}
+function runChecks(){
+  var out = [], sk = stdKey();
+  function W(m){ out.push({lvl:"w", msg:m}); }
+  function I(m){ out.push({lvl:"i", msg:m}); }
+  circuitList().forEach(function(c){
+    if(c.rating.max && c.points > c.rating.max) W("Circuit "+esc(c.name)+": "+c.points+" points, limit "+c.rating.max+" for "+c.cat+" under "+STANDARDS[sk].name+".");
+    if(c.cats.lighting && c.cats.socket) W("Circuit "+esc(c.name)+" mixes lighting and sockets. Keep them on separate circuits.");
+    var big = ["cooking","oven","washer","dishwasher","waterheater","ev","pv"].filter(function(k){ return c.cats[k]; });
+    if(big.length && Object.keys(c.cats).length>1 && sk!=="REBT") W("Circuit "+esc(c.name)+" combines a dedicated appliance ("+big.join(", ")+") with other loads.");
+  });
+  var syms = state.elements.filter(function(e){ return kind(e)==="sym" && TYPES[e.type] && TYPES[e.type].layer!=="deco" && e.type!=="note"; });
+  var outside = syms.filter(function(e){ return !smallestZoneAt(e.x, e.y); });
+  if(outside.length) W(outside.length+" element(s) outside any room or area: "+outside.slice(0,6).map(function(e){ return "#"+e.id+" "+tname(e.type).toLowerCase(); }).join(", ")+(outside.length>6?"...":""));
+  var loads = syms.filter(function(e){ return CAT[e.type] && !CONTROLS[e.type] && !e.circuit; });
+  if(loads.length) I(loads.length+" electrical point(s) without a circuit number (not in the panel diagram).");
+  var cables = state.elements.filter(function(e){ return CABLETAG[e.type] && !e.spec; });
+  if(cables.length) W(cables.length+" cable(s) without type / cross-section.");
+  var zones = state.elements.filter(function(e){ return kind(e)==="zone"; });
+  for(var i=0;i<zones.length;i++) for(var j=i+1;j<zones.length;j++){
+    var a = zones[i], b = zones[j];
+    if(a.x===b.x && a.y===b.y && a.w===b.w && a.h===b.h) W("Zones #"+a.id+" and #"+b.id+" are exactly stacked: one hides the other.");
+    else if((a.type==="room"||a.type==="garage") && (b.type==="room"||b.type==="garage") && !isPoly(a) && !isPoly(b)){
+      var ox = Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x), oy = Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+      if(ox>1 && oy>1 && ox*oy/(SCALE*SCALE) > 0.1) W(esc(a.label||"Room #"+a.id)+" and "+esc(b.label||"Room #"+b.id)+" overlap by "+fmt(ox*oy/(SCALE*SCALE))+" m².");
+    }
+  }
+  var drains = state.elements.filter(function(e){ return e.type==="pipeDrain"; });
+  var wps = syms.filter(function(e){ return WATERPOINTS[e.type]; });
+  if(wps.length && !drains.length) I("No drain pipes drawn yet ("+wps.length+" water points).");
+  else if(drains.length){
+    wps.forEach(function(w){
+      var near = drains.some(function(d){ return pipePts(d).some(function(q){ return Math.hypot(q[0]-w.x, q[1]-w.y) < 2*SCALE; }); });
+      if(!near) I(tname(w.type)+" #"+w.id+" has no drain pipe ending within 2 m.");
+    });
+  }
+  if(circuitList().length && !state.elements.some(function(e){ return e.type==="panel"; })) I("Circuits are defined but no consumer unit is placed on the plan.");
+  return out;
+}
+
+// ============ overview ============
+function closeOv(id){ document.getElementById(id).style.display = "none"; }
+function showSummary(){
+  var rooms = state.elements.filter(function(e){ return kind(e)==="zone" && TYPES[e.type].layer==="structure" && e.type!=="countertop"; });
+  var extz  = state.elements.filter(function(e){ return kind(e)==="zone" && TYPES[e.type].layer==="ext"; });
+  var syms  = state.elements.filter(function(e){ return kind(e)==="sym"; });
+  var html = '<h2>Overview<span class="dot">.</span></h2>';
+  html += '<div class="meta">'+esc(state.meta.title||"")+(state.meta.level?" · "+esc(state.meta.level):"")+' · '+STANDARDS[stdKey()].name+' · '+new Date().toLocaleDateString()+' · '+state.elements.length+' elements</div>';
+  var checks = runChecks();
+  html += '<div class="kicker" style="margin-top:18px">Checks</div>';
+  html += checks.length ? '<ul class="chk">'+checks.map(function(c){ return '<li><span class="tag '+c.lvl+'">'+(c.lvl==="w"?"warning":"info")+'</span>'+c.msg+'</li>'; }).join("")+'</ul>'
+                        : '<p class="ok" style="margin:6px 0 16px">No issue detected.</p>';
+  var tot = 0;
+  html += '<table><tr><th>Room</th><th style="text-align:right">Area</th></tr>';
+  rooms.forEach(function(r){ var a = zoneAreaM2(r); tot += a; html += '<tr><td>'+esc(r.label||tname(r.type))+'</td><td class="num">'+fmt(a)+' m²</td></tr>'; });
+  html += '<tr class="total"><td>Indoor total</td><td class="num">'+fmt(tot)+' m²</td></tr></table>';
+  if(extz.length){
+    html += '<table><tr><th>Exterior</th><th style="text-align:right">Area</th></tr>';
+    extz.forEach(function(r){ html += '<tr><td>'+esc(r.label||tname(r.type))+'</td><td class="num">'+fmt(zoneAreaM2(r))+' m²</td></tr>'; });
+    html += '</table>';
+  }
+  function countTable(title, list){
+    if(!list.length) return "";
+    var counts = {};
+    list.forEach(function(s){ counts[s.type] = (counts[s.type]||0)+1; });
+    var h = '<table><tr><th>'+title+'</th><th style="text-align:right">Qty</th></tr>';
+    Object.keys(counts).forEach(function(k){ h += '<tr><td>'+tname(k)+'</td><td class="num">'+counts[k]+'</td></tr>'; });
+    return h + '<tr class="total"><td>Total</td><td class="num">'+list.length+'</td></tr></table>';
+  }
+  ["elec","domo","it","plumb"].forEach(function(L){ html += countTable(LAYERNAMES[L], syms.filter(function(s){ return TYPES[s.type] && TYPES[s.type].layer===L; })); });
+  var pipes = state.elements.filter(function(e){ return kind(e)==="pipe"; });
+  if(pipes.length){
+    var lens = {};
+    pipes.forEach(function(p){ var k = tname(p.type)+(p.spec?" · "+p.spec:""); lens[k] = (lens[k]||0) + pipeLen(p); });
+    html += '<table><tr><th>Network</th><th style="text-align:right">Length</th></tr>';
+    Object.keys(lens).sort().forEach(function(k){ html += '<tr><td>'+esc(k)+'</td><td class="num">'+fmt(lens[k])+' m</td></tr>'; });
+    html += '</table>';
+  }
+  var cs = circuitList();
+  if(cs.length){
+    html += '<table><tr><th>Circuit</th><th>Content</th><th style="text-align:right">Breaker</th><th style="text-align:right">Section</th><th style="text-align:right">Points</th></tr>';
+    cs.forEach(function(c){
+      var over = c.rating.max && c.points > c.rating.max;
+      html += '<tr><td style="font-family:var(--font-mono)">'+esc(c.name)+'</td><td>'+esc(c.desc)+'</td><td class="num">'+c.rating.a+(c.rating.rcd?" (RCD "+c.rating.rcd+")":"")+'</td><td class="num">'+c.rating.s+'</td><td class="num'+(over?" warn":"")+'">'+c.points+(c.rating.max?" / "+c.rating.max:"")+'</td></tr>';
+    });
+    html += '</table>';
+  }
+  html += '<div class="hint">Indicative values only. Electrical work must follow local regulations and be checked by a qualified professional.</div>';
+  html += '<div class="btnrow"><button class="primary" onclick="closeOv(\'summary\')">Close</button></div>';
+  document.getElementById("summarycard").innerHTML = html;
+  document.getElementById("summary").style.display = "flex";
+}
+
+// ============ diagrams ============
+function breakerSym(x,y){
+  var s = 'stroke="'+INK+'" stroke-width="1.8" fill="none"';
+  return '<line x1="'+x+'" y1="'+y+'" x2="'+x+'" y2="'+(y+16)+'" '+s+'/>'+
+    '<line x1="'+x+'" y1="'+(y+16)+'" x2="'+(x+9)+'" y2="'+(y+36)+'" '+s+'/>'+
+    '<line x1="'+(x-5)+'" y1="'+(y+20)+'" x2="'+(x+5)+'" y2="'+(y+13)+'" '+s+'/>'+
+    '<line x1="'+x+'" y1="'+(y+40)+'" x2="'+x+'" y2="'+(y+58)+'" '+s+'/>';
+}
+function panelSVG(){
+  var cs = circuitList();
+  if(!cs.length) return null;
+  var sk = stdKey(), S = STANDARDS[sk];
+  var colw = 110, x0 = 160;
+  var W = Math.max(720, x0 + cs.length*colw + 40), H = 500;
+  var o = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" font-family="'+FONT+'">';
+  o += '<rect width="'+W+'" height="'+H+'" fill="#FFFFFF"/>';
+  o += '<text x="'+(W/2)+'" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="'+INK+'">Consumer unit, single-line diagram'+(state.meta.title?" · "+esc(state.meta.title):"")+'</text>';
+  o += '<text x="'+(W/2)+'" y="48" text-anchor="middle" font-size="11" fill="'+G600+'">'+S.name+' · generated from the plan</text>';
+  o += '<rect x="36" y="66" width="76" height="60" fill="none" stroke="'+INK+'" stroke-width="2"/>';
+  o += '<text x="74" y="92" text-anchor="middle" font-size="10.5" fill="'+INK+'">'+S.head[0]+'</text>';
+  o += '<text x="74" y="107" text-anchor="middle" font-size="10.5" fill="'+INK+'">'+S.head[1]+'</text>';
+  o += '<line x1="74" y1="126" x2="74" y2="156" stroke="'+INK+'" stroke-width="2"/>';
+  var barY = 156, barEnd = x0 + (cs.length-1)*colw;
+  o += '<line x1="74" y1="'+barY+'" x2="'+Math.max(barEnd,120)+'" y2="'+barY+'" stroke="'+INK+'" stroke-width="3"/>';
+  cs.forEach(function(c,i){
+    var x = x0 + i*colw, over = c.rating.max && c.points > c.rating.max;
+    o += '<line x1="'+x+'" y1="'+barY+'" x2="'+x+'" y2="'+(barY+40)+'" stroke="'+INK+'" stroke-width="1.8"/>';
+    o += breakerSym(x, barY+40);
+    var ty = barY+98;
+    o += '<text x="'+x+'" y="'+(ty+18)+'" text-anchor="middle" font-size="13" font-weight="700" fill="'+INK+'">'+c.rating.a+'</text>';
+    o += '<text x="'+x+'" y="'+(ty+34)+'" text-anchor="middle" font-size="11" font-family="'+MONO+'" fill="'+ACC+'">'+esc(c.name)+'</text>';
+    o += '<text x="'+x+'" y="'+(ty+50)+'" text-anchor="middle" font-size="9.5" fill="'+G600+'">'+c.rating.s+(c.rating.rcd?" · RCD "+c.rating.rcd:"")+'</text>';
+    if(c.rating.module){
+      o += '<rect x="'+(x-48)+'" y="'+(ty+58)+'" width="96" height="26" fill="'+G50+'" stroke="'+INK+'" stroke-width="1.4"/>';
+      o += '<text x="'+x+'" y="'+(ty+75)+'" text-anchor="middle" font-size="9" fill="'+INK+'">'+esc(c.rating.module)+'</text>';
+    }
+    o += '<text x="'+x+'" y="'+(ty+102)+'" text-anchor="middle" font-size="9" fill="'+(over?"#C2410C":G600)+'">'+c.points+' point'+(c.points>1?"s":"")+(c.rating.max?" / max "+c.rating.max:"")+'</text>';
+    c.desc.split(", ").slice(0,3).forEach(function(wd,j){
+      o += '<text x="'+x+'" y="'+(ty+116+j*12)+'" text-anchor="middle" font-size="8.5" fill="'+G400+'">'+esc(wd)+'</text>';
+    });
+  });
+  o += '<text x="36" y="'+(H-34)+'" font-size="10" fill="'+G600+'">'+esc(S.note)+'</text>';
+  o += '<text x="36" y="'+(H-16)+'" font-size="10" fill="'+G600+'">Indicative only. Ratings depend on cable length, installation method and local rules. Have it checked by a qualified electrician.</text>';
+  return o + '</svg>';
+}
+function twowaySVG(){
+  var PH="#8D4B21", NE="#1565C0", TE="#2E7D32", NAV="#EF6C00", RET="#6A1B9A";
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" font-family="'+FONT+'" font-size="12">'+
+  '<rect width="900" height="430" fill="#FFFFFF"/>'+
+  '<text x="450" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="'+INK+'">Typical wiring: two-way switching</text>'+
+  '<rect x="40" y="60" width="65" height="80" fill="none" stroke="'+INK+'" stroke-width="2"/>'+
+  '<text x="72" y="95" text-anchor="middle" fill="'+INK+'">MCB</text><text x="72" y="112" text-anchor="middle" fill="'+INK+'">10A</text>'+
+  '<line x1="105" y1="75" x2="280" y2="75" stroke="'+PH+'" stroke-width="2.5"/><line x1="280" y1="75" x2="280" y2="165" stroke="'+PH+'" stroke-width="2.5"/>'+
+  '<line x1="105" y1="110" x2="700" y2="110" stroke="'+NE+'" stroke-width="2.5"/><line x1="700" y1="110" x2="700" y2="285" stroke="'+NE+'" stroke-width="2.5"/>'+
+  '<line x1="105" y1="230" x2="660" y2="230" stroke="'+TE+'" stroke-width="2.5" stroke-dasharray="10 4"/><line x1="660" y1="230" x2="660" y2="285" stroke="'+TE+'" stroke-width="2.5" stroke-dasharray="10 4"/>'+
+  '<rect x="250" y="165" width="60" height="70" rx="6" fill="'+G50+'" stroke="'+INK+'" stroke-width="2"/><circle cx="280" cy="182" r="3.5" fill="'+INK+'"/><circle cx="266" cy="218" r="3.5" fill="'+INK+'"/><circle cx="294" cy="218" r="3.5" fill="'+INK+'"/><line x1="280" y1="182" x2="268" y2="215" stroke="'+INK+'" stroke-width="2"/>'+
+  '<text x="280" y="255" text-anchor="middle" fill="'+INK+'">SW1</text>'+
+  '<rect x="450" y="165" width="60" height="70" rx="6" fill="'+G50+'" stroke="'+INK+'" stroke-width="2"/><circle cx="480" cy="182" r="3.5" fill="'+INK+'"/><circle cx="466" cy="218" r="3.5" fill="'+INK+'"/><circle cx="494" cy="218" r="3.5" fill="'+INK+'"/><line x1="480" y1="182" x2="492" y2="215" stroke="'+INK+'" stroke-width="2"/>'+
+  '<text x="480" y="255" text-anchor="middle" fill="'+INK+'">SW2</text>'+
+  '<line x1="266" y1="222" x2="266" y2="330" stroke="'+NAV+'" stroke-width="2.5"/><line x1="266" y1="330" x2="466" y2="330" stroke="'+NAV+'" stroke-width="2.5"/><line x1="466" y1="330" x2="466" y2="222" stroke="'+NAV+'" stroke-width="2.5"/>'+
+  '<line x1="294" y1="222" x2="294" y2="352" stroke="'+NAV+'" stroke-width="2.5"/><line x1="294" y1="352" x2="494" y2="352" stroke="'+NAV+'" stroke-width="2.5"/><line x1="494" y1="352" x2="494" y2="222" stroke="'+NAV+'" stroke-width="2.5"/>'+
+  '<text x="380" y="322" text-anchor="middle" fill="'+NAV+'">strappers</text>'+
+  '<line x1="480" y1="178" x2="480" y2="145" stroke="'+RET+'" stroke-width="2.5"/><line x1="480" y1="145" x2="622" y2="145" stroke="'+RET+'" stroke-width="2.5"/><line x1="622" y1="145" x2="622" y2="285" stroke="'+RET+'" stroke-width="2.5"/>'+
+  '<text x="550" y="138" text-anchor="middle" fill="'+RET+'">switched line</text>'+
+  '<circle cx="660" cy="310" r="28" fill="none" stroke="'+INK+'" stroke-width="2"/><line x1="641" y1="291" x2="679" y2="329" stroke="'+INK+'" stroke-width="2"/><line x1="679" y1="291" x2="641" y2="329" stroke="'+INK+'" stroke-width="2"/>'+
+  '<line x1="622" y1="285" x2="645" y2="296" stroke="'+RET+'" stroke-width="2.5"/><line x1="700" y1="285" x2="675" y2="296" stroke="'+NE+'" stroke-width="2.5"/>'+
+  '<text x="660" y="365" text-anchor="middle" fill="'+INK+'">Light point</text>'+
+  '<text x="40" y="405" font-size="11" fill="'+G600+'">Line brown (or local colour) · Neutral blue · Earth green/yellow, dashed · Strappers orange · Switched line violet · 1.5 mm²</text>'+
+  '</svg>';
+}
+function relaySVG(){
+  var PH="#8D4B21", NE="#1565C0", RET="#6A1B9A", SWC="#EF6C00";
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" font-family="'+FONT+'" font-size="12">'+
+  '<rect width="900" height="400" fill="#FFFFFF"/>'+
+  '<text x="450" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="'+INK+'">Typical wiring: smart relay behind a switch (Shelly-type, with neutral)</text>'+
+  '<rect x="40" y="70" width="65" height="80" fill="none" stroke="'+INK+'" stroke-width="2"/><text x="72" y="105" text-anchor="middle" fill="'+INK+'">MCB</text><text x="72" y="122" text-anchor="middle" fill="'+INK+'">10A</text>'+
+  '<rect x="340" y="150" width="150" height="110" rx="8" fill="'+G50+'" stroke="'+INK+'" stroke-width="2"/><text x="415" y="175" text-anchor="middle" font-weight="700" fill="'+INK+'">Relay module</text>'+
+  '<text x="365" y="248" text-anchor="middle" font-family="'+MONO+'" fill="'+INK+'">L</text><text x="395" y="248" text-anchor="middle" font-family="'+MONO+'" fill="'+INK+'">N</text><text x="435" y="248" text-anchor="middle" font-family="'+MONO+'" fill="'+INK+'">SW</text><text x="470" y="248" text-anchor="middle" font-family="'+MONO+'" fill="'+INK+'">O</text>'+
+  '<line x1="105" y1="85" x2="365" y2="85" stroke="'+PH+'" stroke-width="2.5"/><line x1="365" y1="85" x2="365" y2="150" stroke="'+PH+'" stroke-width="2.5"/>'+
+  '<line x1="105" y1="125" x2="395" y2="125" stroke="'+NE+'" stroke-width="2.5"/><line x1="395" y1="125" x2="395" y2="150" stroke="'+NE+'" stroke-width="2.5"/>'+
+  '<line x1="395" y1="125" x2="760" y2="125" stroke="'+NE+'" stroke-width="2.5"/><line x1="760" y1="125" x2="760" y2="232" stroke="'+NE+'" stroke-width="2.5"/>'+
+  '<line x1="250" y1="85" x2="250" y2="300" stroke="'+PH+'" stroke-width="2.5"/>'+
+  '<rect x="220" y="300" width="60" height="60" rx="6" fill="'+G50+'" stroke="'+INK+'" stroke-width="2"/><text x="250" y="380" text-anchor="middle" fill="'+INK+'">Existing switch</text>'+
+  '<line x1="280" y1="330" x2="435" y2="330" stroke="'+SWC+'" stroke-width="2.5"/><line x1="435" y1="330" x2="435" y2="260" stroke="'+SWC+'" stroke-width="2.5"/>'+
+  '<line x1="470" y1="260" x2="470" y2="290" stroke="'+RET+'" stroke-width="2.5"/><line x1="470" y1="290" x2="720" y2="290" stroke="'+RET+'" stroke-width="2.5"/><line x1="720" y1="290" x2="720" y2="262" stroke="'+RET+'" stroke-width="2.5"/>'+
+  '<circle cx="740" cy="250" r="26" fill="none" stroke="'+INK+'" stroke-width="2"/><line x1="722" y1="232" x2="758" y2="268" stroke="'+INK+'" stroke-width="2"/><line x1="758" y1="232" x2="722" y2="268" stroke="'+INK+'" stroke-width="2"/>'+
+  '<text x="740" y="300" text-anchor="middle" fill="'+INK+'">Light point</text>'+
+  '<text x="40" y="395" font-size="11" fill="'+G600+'">Neutral required at the switch or junction box. Without neutral, use a no-neutral variant (e.g. Shelly 1L) and check the minimum load.</text>'+
+  '</svg>';
+}
+var currentSchema = null, currentSchemaName = "diagram";
+function showSchemas(tab){
+  tab = tab || "panel";
+  var html = '<h2>Diagrams<span class="dot">.</span></h2><div class="btnrow" style="margin:12px 0 16px">';
+  [["panel","Panel, single-line"],["twoway","Two-way switching"],["relay","Smart relay"]].forEach(function(b){
+    html += '<button '+(tab===b[0]?'class="primary"':'')+' onclick="showSchemas(\''+b[0]+'\')">'+b[1]+'</button>';
+  });
+  html += '<button onclick="exportSchema()">Export SVG</button><button onclick="closeOv(\'schemas\')">Close</button></div>';
+  if(tab==="panel"){
+    currentSchema = panelSVG(); currentSchemaName = "panel-diagram";
+    html += currentSchema
+      ? '<div style="border:1px solid var(--hairline);border-radius:var(--radius);overflow:auto">'+currentSchema+'</div><div class="hint">Built from the circuit field of each element. Breaker and cross-section follow the dominant load of the circuit and the standard chosen in the plan settings ('+STANDARDS[stdKey()].name+').</div>'
+      : '<div class="hint">No circuit yet. Select electrical points and fill their Circuit field (C1, C2...), then come back here.</div>';
+  } else if(tab==="twoway"){
+    currentSchema = twowaySVG(); currentSchemaName = "two-way-switching";
+    html += '<div style="border:1px solid var(--hairline);border-radius:var(--radius);overflow:auto">'+currentSchema+'</div>';
+  } else {
+    currentSchema = relaySVG(); currentSchemaName = "smart-relay";
+    html += '<div style="border:1px solid var(--hairline);border-radius:var(--radius);overflow:auto">'+currentSchema+'</div>';
+  }
+  document.getElementById("schemascard").innerHTML = html;
+  document.getElementById("schemas").style.display = "flex";
+}
+function exportSchema(){ if(currentSchema) download(currentSchema, "image/svg+xml", slug(state.meta.title)+"-"+currentSchemaName+".svg"); }
+
+// ============ list view ============
+function roomOf(e){
+  if(kind(e)==="zone") return e.label||tname(e.type);
+  var r = refPoint(e), best = null;
+  state.elements.forEach(function(z){
+    if(z===e || kind(z)!=="zone" || !pointInZone(z, r.x, r.y, 0)) return;
+    if(!best) best = z;
+    else {
+      var zz = zrank(z), zb = zrank(best);
+      if(zz>zb || (zz===zb && zoneAreaPx(z) < zoneAreaPx(best))) best = z;
+    }
+  });
+  return best ? (best.label||tname(best.type)) : "Outside";
+}
+function showListing(){
+  var html = '<h2>Element list<span class="dot">.</span></h2>';
+  html += '<div class="meta">'+state.elements.length+' elements · '+new Date().toLocaleDateString()+'</div>';
+  ["structure","ext","elec","domo","it","plumb","deco"].forEach(function(lay){
+    var els = state.elements.filter(function(e){ return TYPES[e.type] && TYPES[e.type].layer===lay; });
+    if(!els.length) return;
+    var byRoom = {};
+    els.forEach(function(e){ var r = roomOf(e); (byRoom[r] = byRoom[r]||[]).push(e); });
+    html += '<div class="kicker" style="margin-top:18px"><span class="num">'+LAYERNAMES[lay]+'</span></div>';
+    html += '<table><tr><th>Room</th><th>Element</th><th>Name</th><th>Circuit</th><th>Size / spec</th><th>Notes</th></tr>';
+    Object.keys(byRoom).sort().forEach(function(room){
+      byRoom[room].forEach(function(e,i){
+        var extra = "";
+        if(kind(e)==="zone") extra = fmt(zoneAreaM2(e))+" m²";
+        if(kind(e)==="open") extra = fmt(e.w/SCALE,2)+" m";
+        if(kind(e)==="pipe") extra = (e.spec? esc(e.spec)+" · " : "")+fmt(pipeLen(e))+" m";
+        html += '<tr><td>'+(i===0? esc(room) : "")+'</td><td>'+tname(e.type)+'</td><td>'+esc(e.label||"")+'</td>'+
+          '<td style="font-family:var(--font-mono);font-size:12px">'+esc(e.circuit||"")+'</td><td style="font-size:12px">'+extra+'</td>'+
+          '<td style="font-size:12px;color:var(--grey-600)">'+esc(e.notes||"")+'</td></tr>';
+      });
+    });
+    html += '</table>';
+  });
+  html += '<div class="btnrow"><button onclick="exportCSV()">Export CSV</button><button class="primary" onclick="closeOv(\'listing\')">Close</button></div>';
+  document.getElementById("listingcard").innerHTML = html;
+  document.getElementById("listing").style.display = "flex";
+}
+function exportCSV(){
+  var rows = [["id","layer","type","element","room","name","circuit","spec","size","notes"]];
+  state.elements.forEach(function(e){
+    var k = kind(e), size = k==="zone" ? fmt(zoneAreaM2(e),2)+" m2" : k==="pipe" ? fmt(pipeLen(e),2)+" m" : k==="open" ? fmt(e.w/SCALE,2)+" m" : "";
+    rows.push([e.id, TYPES[e.type]?TYPES[e.type].layer:"", e.type, tname(e.type), roomOf(e), e.label||"", e.circuit||"", e.spec||"", size, e.notes||""]);
+  });
+  // neutralise spreadsheet formulas (=, +, -, @) coming from free text fields
+  var cell = function(c){ c = String(c); if(/^[=+\-@\t\r]/.test(c)) c = "'"+c; return '"'+c.replace(/"/g,'""')+'"'; };
+  var csv = rows.map(function(r){ return r.map(cell).join(","); }).join("\n");
+  download(csv, "text/csv", slug(state.meta.title)+"-elements.csv");
+}
+
+// ============ areas (target m2) ============
+function showAreas(){
+  var zones = state.elements.filter(function(e){ return kind(e)==="zone"; });
+  var html = '<h2>Areas<span class="dot">.</span></h2><div class="hint" style="margin-top:0">Enter a target area and apply: each zone is scaled to match it as closely as possible (25 cm grid), keeping its proportions; with auto-adjust ON the neighbours on the right and below follow.</div>';
+  html += '<table><tr><th>Zone</th><th style="text-align:right">Current</th><th style="text-align:right">Target m²</th></tr>';
+  zones.forEach(function(z){
+    html += '<tr><td>'+esc(z.label||tname(z.type))+' <span style="color:var(--grey-400);font-size:11px">#'+z.id+'</span></td><td class="num">'+fmt(zoneAreaM2(z))+' m²</td><td class="num"><input type="number" step="0.5" min="0.5" data-zid="'+z.id+'" placeholder="'+fmt(zoneAreaM2(z))+'"></td></tr>';
+  });
+  html += '</table><div class="btnrow"><button class="primary" onclick="applyAreas()">Apply</button><button onclick="closeOv(\'areas\')">Close</button></div>';
+  document.getElementById("areascard").innerHTML = html;
+  document.getElementById("areas").style.display = "flex";
+}
+function resizeToArea(z, m2){
+  var cur = zoneAreaM2(z);
+  if(!(m2>0) || !(cur>0)) return;
+  var f = Math.sqrt(m2/cur);
+  if(isPoly(z)){
+    var ox = z.x, oy = z.y;
+    z.pts = z.pts.map(function(q){ return [snap(ox+(q[0]-ox)*f), snap(oy+(q[1]-oy)*f)]; });
+    syncPolyBBox(z);
+  } else {
+    var n4 = autoAdjust ? edgeNeighbors4(z) : null, ow = z.w, oh = z.h;
+    z.w = Math.max(SNAP*2, snap(z.w*f)); z.h = Math.max(SNAP*2, snap(z.h*f));
+    if(n4) applyNeighbors(n4, {R:1,B:1}, z.w-ow, z.h-oh);
+  }
+}
+function applyAreas(){
+  var inputs = document.querySelectorAll("#areascard input[data-zid]"), todo = [];
+  for(var i=0;i<inputs.length;i++){ var v = parseFloat(inputs[i].value); if(v>0) todo.push([parseInt(inputs[i].dataset.zid,10), v]); }
+  if(!todo.length) return;
+  pushUndo();
+  todo.forEach(function(t){ var z = getEl(t[0]); if(z) resizeToArea(z, t[1]); });
+  render(); showAreas();
+}
+
+// ============ zoom / view ============
+function zoom(f){
+  var ratio = svg.clientHeight/svg.clientWidth || 0.7;
+  var cx = view.x + view.w/2, cy = view.y + view.w*ratio/2;
+  view.w = Math.min(8000, Math.max(250, view.w*f));
+  view.x = cx - view.w/2; view.y = cy - view.w*ratio/2;
+  render();
+}
+function fitView(){
+  if(!state.elements.length){ view = {x:-40,y:-40,w:1400}; render(); return; }
+  var minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+  state.elements.forEach(function(e){
+    var b = bounds(e);
+    minx=Math.min(minx,b.x); miny=Math.min(miny,b.y); maxx=Math.max(maxx,b.x+b.w); maxy=Math.max(maxy,b.y+b.h);
+  });
+  var pad = 60, ratio = svg.clientHeight/svg.clientWidth || 0.7;
+  view.x = minx-pad; view.y = miny-pad;
+  view.w = Math.max(maxx-minx+2*pad, (maxy-miny+2*pad)/ratio);
+  render();
+}
+svg.addEventListener("wheel", function(ev){ ev.preventDefault(); zoom(ev.deltaY>0?1.1:0.9); }, {passive:false});
+
+// ============ files ============
+// Plans can come from anywhere: every field is coerced to its expected type before use,
+// so a crafted file cannot inject markup or script into the page.
+function num(v, d){ var n = Number(v); return isFinite(n) ? n : d; }
+function str(v){ return v===undefined || v===null ? "" : String(v).slice(0, 2000); }
+function sanitizeEl(raw){
+  var t = typeof raw.type==="string" ? raw.type : "";
+  if(LEGACY.hasOwnProperty(t)) t = LEGACY[t];
+  var e = {id: Number.isInteger(raw.id) && raw.id>0 ? raw.id : 0, type:t, rot: num(raw.rot, 0),
+           label: str(raw.label), circuit: str(raw.circuit)};
+  if(raw.notes!==undefined) e.notes = str(raw.notes);
+  if(raw.spec!==undefined) e.spec = str(raw.spec);
+  if(typeof raw.fill==="string" && /^#[0-9a-fA-F]{3,8}$/.test(raw.fill)) e.fill = raw.fill;
+  ["x","y","w","h"].forEach(function(f){ if(raw[f]!==undefined){ var n = num(raw[f], null); if(n!==null) e[f] = n; } });
+  if(Array.isArray(raw.pts)){
+    var pts = raw.pts.filter(function(q){ return Array.isArray(q) && isFinite(Number(q[0])) && isFinite(Number(q[1])); })
+                     .map(function(q){ return [Number(q[0]), Number(q[1])]; });
+    if(pts.length>=2) e.pts = pts;
+  }
+  if(!TYPES.hasOwnProperty(t)){
+    e.label = e.label || str(t).slice(0, 60);
+    e.notes = ((e.notes||"")+" [unknown type: "+str(t).slice(0, 60)+"]").trim();
+    e.type = "note";
+    if(e.x===undefined){ e.x = e.pts ? e.pts[0][0] : 0; e.y = e.pts ? e.pts[0][1] : 0; }
+    delete e.pts;
+  }
+  var T = TYPES[e.type], k = T.kind;
+  if(k==="zone"){
+    if(e.pts && e.pts.length<3) delete e.pts;
+    if(!e.pts){ e.x = e.x||0; e.y = e.y||0; e.w = e.w>0 ? e.w : T.w; e.h = e.h>0 ? e.h : T.h; }
+  } else if(k==="open"){ e.x = e.x||0; e.y = e.y||0; e.w = e.w>0 ? e.w : T.w; e.h = 12; delete e.pts; }
+  else if(k==="pipe"){ if(!e.pts){ var x0 = e.x||0, y0 = e.y||0; e.pts = [[x0,y0],[x0+(T.w||100),y0]]; } delete e.x; delete e.y; delete e.w; delete e.h; }
+  else { e.x = e.x||0; e.y = e.y||0; delete e.pts; delete e.w; delete e.h; }
+  return e;
+}
+function migrate(obj){
+  if(Array.isArray(obj)) obj = {elements:obj};
+  if(!obj || !Array.isArray(obj.elements)) throw new Error("No elements array");
+  var seen = {}, maxId = 0, meta = obj.meta && typeof obj.meta==="object" ? obj.meta : {};
+  obj = {meta:{
+      id: str(meta.id).replace(/[^A-Za-z0-9._-]/g, "-").slice(0, 80),
+      rev: Number.isInteger(meta.rev) && meta.rev>0 ? meta.rev : 1,
+      title: meta.title===undefined ? "Untitled plan" : str(meta.title).slice(0, 200),
+      level: str(meta.level).slice(0, 100), standard: str(meta.standard), lang: str(meta.lang).slice(0, 10)},
+    elements: obj.elements.filter(function(e){ return e && typeof e==="object"; }).map(sanitizeEl), nextId: num(obj.nextId, 0)};
+  obj.elements.forEach(function(e){
+    if(e.id && seen[e.id]) e.id = 0;
+    if(e.id) seen[e.id] = 1;
+    maxId = Math.max(maxId, e.id);
+    if(kind(e)==="zone" && isPoly(e)) syncPolyBBox(e);
+  });
+  obj.elements.forEach(function(e){ if(!e.id) e.id = ++maxId; });
+  obj.nextId = Math.max(obj.nextId||0, maxId+1);
+  obj.format = FORMAT; obj.version = FORMAT_VERSION;
+  if(!obj.meta.id) obj.meta.id = "plan";
+  if(!STANDARDS.hasOwnProperty(obj.meta.standard)) obj.meta.standard = "IEC";
+  return obj;
+}
+function storageKey(){ return "khp:"+(state.meta.id||"plan")+":"+(state.meta.rev||1); }
+function persist(){ try{ localStorage.setItem(storageKey(), JSON.stringify(state)); }catch(e){} }
+function download(content, mime, name){
+  var blob = content instanceof Blob ? content : new Blob([content], {type:mime});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function saveJSON(){ download(JSON.stringify(state,null,1), "application/json", slug(state.meta.title)+".json"); }
+function loadJSON(input){
+  var f = input.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try{ var s = migrate(JSON.parse(r.result)); pushUndo(); state = s; selId = null; fitView(); }
+    catch(e){ alert("Invalid plan file: "+e.message); }
+  };
+  r.readAsText(f); input.value = "";
+}
+function planSVGString(opts){
+  opts = opts || {};
+  var minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+  var els = sorted().filter(function(e){ return opts.allLayers || layerVisible(e); });
+  els.forEach(function(e){ var b = bounds(e); minx=Math.min(minx,b.x); miny=Math.min(miny,b.y); maxx=Math.max(maxx,b.x+b.w); maxy=Math.max(maxy,b.y+b.h); });
+  if(!els.length){ minx=0; miny=0; maxx=500; maxy=300; }
+  var pad = 40, x0 = minx-pad, y0 = miny-pad, W = maxx-minx+2*pad, H = maxy-miny+2*pad;
+  var body = els.map(elemSVG).join("");
+  var title = (state.meta.title||"")+(state.meta.level?" · "+state.meta.level:"");
+  var bar = '<g font-family="'+FONT+'"><text x="'+(x0+pad/2)+'" y="'+(y0+H+22)+'" font-size="13" font-weight="700" fill="'+INK+'">'+esc(title)+'</text>'+
+    '<line x1="'+(x0+W-pad/2-SCALE*2)+'" y1="'+(y0+H+16)+'" x2="'+(x0+W-pad/2)+'" y2="'+(y0+H+16)+'" stroke="'+INK+'" stroke-width="2"/>'+
+    '<text x="'+(x0+W-pad/2-SCALE)+'" y="'+(y0+H+30)+'" text-anchor="middle" font-family="'+MONO+'" font-size="10" fill="'+G600+'">2 m</text></g>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+x0+' '+y0+' '+W+' '+(H+40)+'" width="'+Math.round(W)+'" height="'+Math.round(H+40)+'">'+
+    '<rect x="'+x0+'" y="'+y0+'" width="'+W+'" height="'+(H+40)+'" fill="#FFFFFF"/>'+body+bar+'</svg>';
+}
+function exportSVG(){ download(planSVGString(), "image/svg+xml", slug(state.meta.title)+".svg"); }
+function exportPNG(){
+  var s = planSVGString(), m = s.match(/width="(\d+)" height="(\d+)"/), W = +m[1], H = +m[2], k = 2;
+  var img = new Image();
+  img.onload = function(){
+    var cv = document.createElement("canvas"); cv.width = W*k; cv.height = H*k;
+    var ctx = cv.getContext("2d"); ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.drawImage(img,0,0,cv.width,cv.height);
+    cv.toBlob(function(b){ download(b, "image/png", slug(state.meta.title)+".png"); });
+  };
+  img.src = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s);
+}
+function newPlan(){
+  if(!confirm("Start a new empty plan? The current one stays saved in this browser under its own name.")) return;
+  pushUndo();
+  state = migrate({meta:{id:"plan-"+Date.now(), rev:1, title:"New plan", standard:state.meta.standard}, elements:[], nextId:1});
+  selId = null; view = {x:-40,y:-40,w:1400}; render();
+}
+
+// ============ public API (used by scripts/render_plan.py and for automation) ============
+window.KHP = {
+  getState: function(){ return JSON.parse(JSON.stringify(state)); },
+  setState: function(s){ state = migrate(JSON.parse(JSON.stringify(s))); selId = null; fitView(); },
+  svg: function(opts){ return planSVGString(opts); },
+  panelSVG: function(){ return panelSVG(); },
+  checks: function(){ return runChecks().map(function(c){ return {level:c.lvl==="w"?"warning":"info", message:c.msg.replace(/<[^>]+>/g,"")}; }); },
+  setLayers: function(o){ Object.keys(o).forEach(function(k){ layers[k] = !!o[k]; }); buildSidebar(); render(); },
+  preset: function(name){ setPreset(name); }
+};
+
+// ============ init ============
+(function init(){
+  var embedded = null;
+  try{ embedded = migrate(JSON.parse(document.getElementById("embedded-plan").textContent)); }
+  catch(e){ embedded = migrate({meta:{id:"plan", rev:1, title:"New plan"}, elements:[], nextId:1}); }
+  state = embedded;
+  try{
+    var saved = localStorage.getItem(storageKey());
+    if(saved){ var s = migrate(JSON.parse(saved)); if(s.elements.length || !embedded.elements.length) state = s; }
+  }catch(e){}
+  buildSidebar();
+  window.addEventListener("resize", render);
+  render();
+  setTimeout(fitView, 60);
+})();
+</script>
+</body>
+</html>
